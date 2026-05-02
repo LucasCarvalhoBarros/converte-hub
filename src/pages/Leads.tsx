@@ -1,15 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck } from "lucide-react";
+import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Lead, LeadStatus, Message, STATUS_LIST, STATUS_META } from "@/lib/types";
 import { getLeads, getMessages, sendMessage, updateLeadStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+// Kanban columns map to existing LeadStatus values
+type KanbanCol = "fez_contato" | "orcamento" | "comprou";
+const KANBAN_COLS: { key: KanbanCol; label: string; statuses: LeadStatus[]; primaryStatus: LeadStatus; accent: string; bar: string }[] = [
+  { key: "fez_contato", label: "Fez Contato", statuses: ["novo_lead", "em_atendimento"], primaryStatus: "novo_lead", accent: "bg-status-novo/10", bar: "bg-status-novo" },
+  { key: "orcamento", label: "Orçamento", statuses: ["interessado", "quente"], primaryStatus: "interessado", accent: "bg-status-interessado/10", bar: "bg-status-interessado" },
+  { key: "comprou", label: "Comprou", statuses: ["cliente"], primaryStatus: "cliente", accent: "bg-status-cliente/10", bar: "bg-status-cliente" },
+];
+function colOfStatus(s: LeadStatus): KanbanCol | null {
+  for (const c of KANBAN_COLS) if (c.statuses.includes(s)) return c.key;
+  return null;
+}
 
 function formatTime(iso?: string) {
   if (!iso) return "";
@@ -31,6 +44,12 @@ export default function Leads() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const [view, setView] = useState<"lista" | "kanban">("lista");
+  const [sourceFilter, setSourceFilter] = useState<string>("todas");
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<KanbanCol | null>(null);
 
   useEffect(() => {
     getLeads().then((d) => {
@@ -69,6 +88,12 @@ export default function Leads() {
     toast.success(`Status atualizado para ${STATUS_META[status].label}`);
   };
 
+  const updateStatusFor = async (leadId: string, status: LeadStatus) => {
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status } : l)));
+    await updateLeadStatus(leadId, status);
+    toast.success(`Status atualizado para ${STATUS_META[status].label}`);
+  };
+
   const handleSend = async () => {
     if (!selected || !draft.trim()) return;
     setSending(true);
@@ -79,9 +104,157 @@ export default function Leads() {
     setSending(false);
   };
 
+  const sources = useMemo(() => Array.from(new Set(leads.map((l) => l.source))), [leads]);
+  const kanbanFiltered = useMemo(
+    () =>
+      leads.filter((l) => {
+        if (sourceFilter !== "todas" && l.source !== sourceFilter) return false;
+        if (search && !`${l.name} ${l.phone}`.toLowerCase().includes(search.toLowerCase())) return false;
+        return true;
+      }),
+    [leads, sourceFilter, search]
+  );
+  const detail = leads.find((l) => l.id === detailId) ?? null;
+
   return (
     <AppShell>
-      <div className="flex h-full flex-col lg:flex-row">
+      {/* View toggle bar */}
+      <div className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-4 lg:px-6 py-3">
+        <div className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5">
+          <button
+            onClick={() => setView("lista")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              view === "lista" ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <List className="h-3.5 w-3.5" /> Lista
+          </button>
+          <button
+            onClick={() => setView("kanban")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              view === "kanban" ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Columns3 className="h-3.5 w-3.5" /> Colunas
+            <span className="ml-1 rounded-full bg-destructive px-1.5 py-0.5 text-[9px] font-bold text-destructive-foreground">Novidade</span>
+          </button>
+        </div>
+
+        {view === "kanban" && (
+          <>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Nome ou telefone"
+                className="pl-9 bg-muted/40 border-transparent h-9"
+              />
+            </div>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="Todas as Origens" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as Origens</SelectItem>
+                {sources.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="ml-auto text-xs text-muted-foreground">
+              {kanbanFiltered.length} leads
+            </span>
+          </>
+        )}
+      </div>
+
+      {view === "kanban" ? (
+        <div className="h-[calc(100%-57px)] overflow-x-auto bg-muted/20 p-4 lg:p-6">
+          <div className="grid h-full grid-cols-1 md:grid-cols-3 gap-4 min-w-[720px]">
+            {KANBAN_COLS.map((col) => {
+              const items = kanbanFiltered.filter((l) => col.statuses.includes(l.status));
+              const isOver = dragOver === col.key;
+              return (
+                <div
+                  key={col.key}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(col.key); }}
+                  onDragLeave={() => setDragOver((c) => (c === col.key ? null : c))}
+                  onDrop={() => {
+                    if (dragId) {
+                      const lead = leads.find((l) => l.id === dragId);
+                      if (lead && !col.statuses.includes(lead.status)) {
+                        updateStatusFor(dragId, col.primaryStatus);
+                      }
+                    }
+                    setDragId(null);
+                    setDragOver(null);
+                  }}
+                  className={cn(
+                    "flex flex-col rounded-xl border border-border bg-card transition-colors",
+                    isOver && "border-primary bg-primary/5"
+                  )}
+                >
+                  <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className={cn("h-2 w-2 rounded-full", col.bar)} />
+                      <h3 className="font-display text-sm font-semibold">{col.label}</h3>
+                      <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                        {items.length}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-2 overflow-y-auto scrollbar-thin p-3">
+                    {items.length === 0 && (
+                      <div className="rounded-lg border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+                        Arraste leads para cá
+                      </div>
+                    )}
+                    {items.map((l) => {
+                      const meta = STATUS_META[l.status];
+                      return (
+                        <div
+                          key={l.id}
+                          draggable
+                          onDragStart={() => setDragId(l.id)}
+                          onDragEnd={() => { setDragId(null); setDragOver(null); }}
+                          onClick={() => setDetailId(l.id)}
+                          className={cn(
+                            "group cursor-pointer rounded-lg border border-border bg-card p-3 shadow-soft transition-all hover:shadow-elegant hover:-translate-y-0.5",
+                            dragId === l.id && "opacity-50"
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="truncate text-sm font-semibold">{l.phone}</div>
+                              <div className="truncate text-xs text-muted-foreground">{l.name}</div>
+                            </div>
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-success/15 text-success">
+                              <MessageCircle className="h-3.5 w-3.5" />
+                            </div>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span className="inline-flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {l.lastMessageAt ? new Date(l.lastMessageAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
+                            </span>
+                            <span className={cn("rounded-full border px-1.5 py-0.5 text-[9px] font-semibold", meta.color)}>
+                              {meta.label}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+      <div className="flex h-[calc(100%-57px)] flex-col lg:flex-row">
         {/* Lead list */}
         <aside className={cn(
           "flex w-full lg:w-[360px] shrink-0 flex-col border-r border-border bg-card",
@@ -270,6 +443,76 @@ export default function Leads() {
           )}
         </section>
       </div>
+      )}
+
+      {/* Lead detail dialog (kanban) */}
+      <Dialog open={!!detailId} onOpenChange={(o) => !o && setDetailId(null)}>
+        <DialogContent className="max-w-md">
+          {detail && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-primary text-sm font-semibold text-primary-foreground">
+                    {detail.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                  </div>
+                  <div className="min-w-0 flex-1 text-left">
+                    <DialogTitle className="font-display">{detail.name}</DialogTitle>
+                    <DialogDescription className="flex items-center gap-1.5 text-xs">
+                      <Phone className="h-3 w-3" /> {detail.phone}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="rounded-lg border border-border/60 p-3">
+                  <div className="text-muted-foreground">Origem</div>
+                  <div className="mt-0.5 font-semibold text-foreground">{detail.source}</div>
+                </div>
+                <div className="rounded-lg border border-border/60 p-3">
+                  <div className="text-muted-foreground">Última msg</div>
+                  <div className="mt-0.5 font-semibold text-foreground">{formatTime(detail.lastMessageAt)}</div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Status</label>
+                <Select value={detail.status} onValueChange={(v) => updateStatusFor(detail.id, v as LeadStatus)}>
+                  <SelectTrigger>
+                    <div className="flex items-center gap-2">
+                      <span className={cn("h-2 w-2 rounded-full", STATUS_META[detail.status].dot)} />
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_LIST.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        <div className="flex items-center gap-2">
+                          <span className={cn("h-2 w-2 rounded-full", STATUS_META[s].dot)} />
+                          {STATUS_META[s].label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-2"
+                  onClick={() => { setSelectedId(detail.id); setView("lista"); setDetailId(null); }}
+                >
+                  <Eye className="h-4 w-4" /> Ver conversa
+                </Button>
+                <Button className="flex-1 bg-gradient-primary hover:opacity-95 shadow-glow gap-2" onClick={() => setDetailId(null)}>
+                  Fechar
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
