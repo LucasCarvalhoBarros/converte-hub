@@ -1,15 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck } from "lucide-react";
+import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Lead, LeadStatus, Message, STATUS_LIST, STATUS_META } from "@/lib/types";
 import { getLeads, getMessages, sendMessage, updateLeadStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+// Kanban columns map to existing LeadStatus values
+type KanbanCol = "fez_contato" | "orcamento" | "comprou";
+const KANBAN_COLS: { key: KanbanCol; label: string; statuses: LeadStatus[]; primaryStatus: LeadStatus; accent: string; bar: string }[] = [
+  { key: "fez_contato", label: "Fez Contato", statuses: ["novo_lead", "em_atendimento"], primaryStatus: "novo_lead", accent: "bg-status-novo/10", bar: "bg-status-novo" },
+  { key: "orcamento", label: "Orçamento", statuses: ["interessado", "quente"], primaryStatus: "interessado", accent: "bg-status-interessado/10", bar: "bg-status-interessado" },
+  { key: "comprou", label: "Comprou", statuses: ["cliente"], primaryStatus: "cliente", accent: "bg-status-cliente/10", bar: "bg-status-cliente" },
+];
+function colOfStatus(s: LeadStatus): KanbanCol | null {
+  for (const c of KANBAN_COLS) if (c.statuses.includes(s)) return c.key;
+  return null;
+}
 
 function formatTime(iso?: string) {
   if (!iso) return "";
@@ -31,6 +44,12 @@ export default function Leads() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const [view, setView] = useState<"lista" | "kanban">("lista");
+  const [sourceFilter, setSourceFilter] = useState<string>("todas");
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<KanbanCol | null>(null);
 
   useEffect(() => {
     getLeads().then((d) => {
