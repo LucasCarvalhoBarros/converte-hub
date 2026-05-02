@@ -45,7 +45,7 @@ export default function Leads() {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const [view, setView] = useState<"lista" | "kanban">("lista");
+  const [view, setView] = useState<"lista" | "kanban">("kanban");
   const [sourceFilter, setSourceFilter] = useState<string>("todas");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
