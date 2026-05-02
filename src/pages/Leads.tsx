@@ -443,6 +443,76 @@ export default function Leads() {
           )}
         </section>
       </div>
+      )}
+
+      {/* Lead detail dialog (kanban) */}
+      <Dialog open={!!detailId} onOpenChange={(o) => !o && setDetailId(null)}>
+        <DialogContent className="max-w-md">
+          {detail && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-primary text-sm font-semibold text-primary-foreground">
+                    {detail.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                  </div>
+                  <div className="min-w-0 flex-1 text-left">
+                    <DialogTitle className="font-display">{detail.name}</DialogTitle>
+                    <DialogDescription className="flex items-center gap-1.5 text-xs">
+                      <Phone className="h-3 w-3" /> {detail.phone}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="rounded-lg border border-border/60 p-3">
+                  <div className="text-muted-foreground">Origem</div>
+                  <div className="mt-0.5 font-semibold text-foreground">{detail.source}</div>
+                </div>
+                <div className="rounded-lg border border-border/60 p-3">
+                  <div className="text-muted-foreground">Última msg</div>
+                  <div className="mt-0.5 font-semibold text-foreground">{formatTime(detail.lastMessageAt)}</div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Status</label>
+                <Select value={detail.status} onValueChange={(v) => updateStatusFor(detail.id, v as LeadStatus)}>
+                  <SelectTrigger>
+                    <div className="flex items-center gap-2">
+                      <span className={cn("h-2 w-2 rounded-full", STATUS_META[detail.status].dot)} />
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_LIST.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        <div className="flex items-center gap-2">
+                          <span className={cn("h-2 w-2 rounded-full", STATUS_META[s].dot)} />
+                          {STATUS_META[s].label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-2"
+                  onClick={() => { setSelectedId(detail.id); setView("lista"); setDetailId(null); }}
+                >
+                  <Eye className="h-4 w-4" /> Ver conversa
+                </Button>
+                <Button className="flex-1 bg-gradient-primary hover:opacity-95 shadow-glow gap-2" onClick={() => setDetailId(null)}>
+                  Fechar
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
