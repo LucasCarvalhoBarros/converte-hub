@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, MessageSquare, Settings, LogOut, Search, Bell } from "lucide-react";
+import { LayoutDashboard, Users, MessageSquare, Settings, LogOut, Search, Bell, BarChart3 } from "lucide-react";
 import { Logo } from "./Logo";
 import { auth, Session } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Users },
   { to: "/conversas", label: "Conversas", icon: MessageSquare },
+  { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/config", label: "Configurações", icon: Settings },
 ];
 
