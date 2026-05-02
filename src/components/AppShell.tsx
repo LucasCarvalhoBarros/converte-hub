@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, MessageSquare, Settings, LogOut, Search, Bell, BarChart3 } from "lucide-react";
 import { Logo } from "./Logo";
+import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { auth, Session } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,9 +85,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-4 md:px-6">
           <div className="md:hidden"><Logo compact /></div>
-          <div className="relative hidden md:block flex-1 max-w-md">
+          <WorkspaceSwitcher />
+          <div className="relative hidden lg:block flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Buscar leads, conversas, números..." className="pl-9 bg-muted/50 border-transparent focus-visible:bg-card" />
+            <Input placeholder="Buscar leads, conversas..." className="pl-9 bg-muted/50 border-transparent focus-visible:bg-card" />
           </div>
           <div className="ml-auto flex items-center gap-2">
             <Button variant="ghost" size="icon" className="relative">
