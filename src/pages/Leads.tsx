@@ -118,7 +118,143 @@ export default function Leads() {
 
   return (
     <AppShell>
-      <div className="flex h-full flex-col lg:flex-row">
+      {/* View toggle bar */}
+      <div className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-4 lg:px-6 py-3">
+        <div className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5">
+          <button
+            onClick={() => setView("lista")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              view === "lista" ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <List className="h-3.5 w-3.5" /> Lista
+          </button>
+          <button
+            onClick={() => setView("kanban")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              view === "kanban" ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Columns3 className="h-3.5 w-3.5" /> Colunas
+            <span className="ml-1 rounded-full bg-destructive px-1.5 py-0.5 text-[9px] font-bold text-destructive-foreground">Novidade</span>
+          </button>
+        </div>
+
+        {view === "kanban" && (
+          <>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Nome ou telefone"
+                className="pl-9 bg-muted/40 border-transparent h-9"
+              />
+            </div>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="Todas as Origens" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as Origens</SelectItem>
+                {sources.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="ml-auto text-xs text-muted-foreground">
+              {kanbanFiltered.length} leads
+            </span>
+          </>
+        )}
+      </div>
+
+      {view === "kanban" ? (
+        <div className="h-[calc(100%-57px)] overflow-x-auto bg-muted/20 p-4 lg:p-6">
+          <div className="grid h-full grid-cols-1 md:grid-cols-3 gap-4 min-w-[720px]">
+            {KANBAN_COLS.map((col) => {
+              const items = kanbanFiltered.filter((l) => col.statuses.includes(l.status));
+              const isOver = dragOver === col.key;
+              return (
+                <div
+                  key={col.key}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(col.key); }}
+                  onDragLeave={() => setDragOver((c) => (c === col.key ? null : c))}
+                  onDrop={() => {
+                    if (dragId) {
+                      const lead = leads.find((l) => l.id === dragId);
+                      if (lead && !col.statuses.includes(lead.status)) {
+                        updateStatusFor(dragId, col.primaryStatus);
+                      }
+                    }
+                    setDragId(null);
+                    setDragOver(null);
+                  }}
+                  className={cn(
+                    "flex flex-col rounded-xl border border-border bg-card transition-colors",
+                    isOver && "border-primary bg-primary/5"
+                  )}
+                >
+                  <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className={cn("h-2 w-2 rounded-full", col.bar)} />
+                      <h3 className="font-display text-sm font-semibold">{col.label}</h3>
+                      <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                        {items.length}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-2 overflow-y-auto scrollbar-thin p-3">
+                    {items.length === 0 && (
+                      <div className="rounded-lg border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+                        Arraste leads para cá
+                      </div>
+                    )}
+                    {items.map((l) => {
+                      const meta = STATUS_META[l.status];
+                      return (
+                        <div
+                          key={l.id}
+                          draggable
+                          onDragStart={() => setDragId(l.id)}
+                          onDragEnd={() => { setDragId(null); setDragOver(null); }}
+                          onClick={() => setDetailId(l.id)}
+                          className={cn(
+                            "group cursor-pointer rounded-lg border border-border bg-card p-3 shadow-soft transition-all hover:shadow-elegant hover:-translate-y-0.5",
+                            dragId === l.id && "opacity-50"
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="truncate text-sm font-semibold">{l.phone}</div>
+                              <div className="truncate text-xs text-muted-foreground">{l.name}</div>
+                            </div>
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-success/15 text-success">
+                              <MessageCircle className="h-3.5 w-3.5" />
+                            </div>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span className="inline-flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {l.lastMessageAt ? new Date(l.lastMessageAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
+                            </span>
+                            <span className={cn("rounded-full border px-1.5 py-0.5 text-[9px] font-semibold", meta.color)}>
+                              {meta.label}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+      <div className="flex h-[calc(100%-57px)] flex-col lg:flex-row">
         {/* Lead list */}
         <aside className={cn(
           "flex w-full lg:w-[360px] shrink-0 flex-col border-r border-border bg-card",
