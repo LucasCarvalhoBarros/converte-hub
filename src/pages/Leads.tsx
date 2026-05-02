@@ -88,6 +88,12 @@ export default function Leads() {
     toast.success(`Status atualizado para ${STATUS_META[status].label}`);
   };
 
+  const updateStatusFor = async (leadId: string, status: LeadStatus) => {
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status } : l)));
+    await updateLeadStatus(leadId, status);
+    toast.success(`Status atualizado para ${STATUS_META[status].label}`);
+  };
+
   const handleSend = async () => {
     if (!selected || !draft.trim()) return;
     setSending(true);
@@ -97,6 +103,18 @@ export default function Leads() {
     setMessages((prev) => [...prev, msg]);
     setSending(false);
   };
+
+  const sources = useMemo(() => Array.from(new Set(leads.map((l) => l.source))), [leads]);
+  const kanbanFiltered = useMemo(
+    () =>
+      leads.filter((l) => {
+        if (sourceFilter !== "todas" && l.source !== sourceFilter) return false;
+        if (search && !`${l.name} ${l.phone}`.toLowerCase().includes(search.toLowerCase())) return false;
+        return true;
+      }),
+    [leads, sourceFilter, search]
+  );
+  const detail = leads.find((l) => l.id === detailId) ?? null;
 
   return (
     <AppShell>
