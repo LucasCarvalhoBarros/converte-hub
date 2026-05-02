@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lead, STATUS_META } from "@/lib/types";
 import { getLeads } from "@/lib/api";
+import { onWorkspaceChange } from "@/lib/workspace";
 import { cn } from "@/lib/utils";
 
 interface Stat {
@@ -22,7 +23,12 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getLeads().then((d) => { setLeads(d); setLoading(false); });
+    const load = () => {
+      setLoading(true);
+      getLeads().then((d) => { setLeads(d); setLoading(false); });
+    };
+    load();
+    return onWorkspaceChange(load);
   }, []);
 
   const stats: Stat[] = useMemo(() => {

@@ -1,4 +1,5 @@
 import type { Lead, LeadStatus, Message } from "./types";
+import { getStoredWorkspaceId } from "./workspace";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 
@@ -43,9 +44,20 @@ async function tryFetch<T>(path: string, init?: RequestInit): Promise<T | null> 
   }
 }
 
+function workspaceSlice<T>(arr: T[], wsId: string): T[] {
+  // Deterministic slice per workspace so each cliente looks distinct
+  const seed = wsId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const offset = seed % arr.length;
+  const take = Math.max(2, (arr.length - (seed % 3)));
+  const rotated = [...arr.slice(offset), ...arr.slice(0, offset)];
+  return rotated.slice(0, take);
+}
+
 export async function getLeads(): Promise<Lead[]> {
-  const data = await tryFetch<Lead[]>("/leads");
-  return data ?? MOCK_LEADS;
+  const wsId = getStoredWorkspaceId();
+  const data = await tryFetch<Lead[]>(`/leads?workspace=${wsId}`);
+  const list = data ?? MOCK_LEADS;
+  return data ? list : workspaceSlice(list, wsId);
 }
 
 export async function getMessages(leadId: string): Promise<Message[]> {

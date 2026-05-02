@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Lead, LeadStatus, Message, STATUS_LIST, STATUS_META } from "@/lib/types";
 import { getLeads, getMessages, sendMessage, updateLeadStatus } from "@/lib/api";
+import { onWorkspaceChange } from "@/lib/workspace";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -52,12 +53,15 @@ export default function Leads() {
   const [dragOver, setDragOver] = useState<KanbanCol | null>(null);
 
   useEffect(() => {
-    getLeads().then((d) => {
-      setLeads(d);
-      if (!selectedId && d.length) {
-        setSelectedId(d[0].id);
-      }
-    });
+    const load = () => {
+      getLeads().then((d) => {
+        setLeads(d);
+        setSelectedId((prev) => (prev && d.some((l) => l.id === prev) ? prev : d[0]?.id ?? null));
+        setDetailId(null);
+      });
+    };
+    load();
+    return onWorkspaceChange(load);
   }, []);
 
   useEffect(() => {
