@@ -53,6 +53,20 @@ export default function Leads() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<KanbanCol | null>(null);
+  const [moments, setMoments] = useState<Moment[]>([]);
+  const [leadMoments, setLeadMoments] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setMoments(getMoments());
+    return onMomentsChange(() => setMoments(getMoments()));
+  }, []);
+
+  const updateLeadMoment = (leadId: string, momentId: string) => {
+    setLeadMoment(leadId, momentId);
+    setLeadMoments((prev) => ({ ...prev, [leadId]: momentId }));
+    const m = moments.find((x) => x.id === momentId);
+    if (m) toast.success(`Momento atualizado para ${m.label}`);
+  };
 
   useEffect(() => {
     const load = () => {
