@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Leads from "./pages/Leads.tsx";
 import Relatorios from "./pages/Relatorios.tsx";
+import StatusConfig from "./pages/StatusConfig.tsx";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/leads" element={<Leads />} />
           <Route path="/conversas" element={<Leads />} />
           <Route path="/relatorios" element={<Relatorios />} />
+          <Route path="/config/status" element={<StatusConfig />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
