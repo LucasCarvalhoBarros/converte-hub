@@ -517,6 +517,40 @@ export default function Leads() {
                 </Select>
               </div>
 
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-muted-foreground">Momento do lead</label>
+                  <Link to="/config/status" className="text-[10px] font-medium text-primary hover:underline">
+                    Configurar
+                  </Link>
+                </div>
+                {moments.length === 0 ? (
+                  <div className="rounded-md border border-dashed border-border p-3 text-xs text-muted-foreground">
+                    Nenhum momento cadastrado.{" "}
+                    <Link to="/config/status" className="text-primary hover:underline">Cadastrar agora</Link>
+                  </div>
+                ) : (
+                  <Select
+                    value={leadMoments[detail.id] ?? getLeadMoment(detail.id) ?? ""}
+                    onValueChange={(v) => updateLeadMoment(detail.id, v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um momento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {moments.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full" style={{ background: m.color }} />
+                            {m.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
               <div className="flex gap-2 pt-2">
                 <Button
                   variant="outline"
