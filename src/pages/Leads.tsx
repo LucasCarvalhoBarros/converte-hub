@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar } from "lucide-react";
+import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar as CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Lead, LeadStatus, Message, STATUS_LIST, STATUS_META } from "@/lib/types";
 import { getLeads, getMessages, sendMessage, updateLeadStatus } from "@/lib/api";
 import { onWorkspaceChange } from "@/lib/workspace";
@@ -55,6 +60,13 @@ export default function Leads() {
   const [dragOver, setDragOver] = useState<KanbanCol | null>(null);
   const [moments, setMoments] = useState<Moment[]>([]);
   const [leadMoments, setLeadMoments] = useState<Record<string, string>>({});
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(to.getDate() - 6); // últimos 7 dias (incluindo hoje)
+    from.setHours(0, 0, 0, 0);
+    return { from, to };
+  });
 
   useEffect(() => {
     setMoments(getMoments());
@@ -93,13 +105,31 @@ export default function Leads() {
 
   const selected = leads.find((l) => l.id === selectedId) ?? null;
 
+  const inDateRange = (iso?: string) => {
+    if (!dateRange?.from && !dateRange?.to) return true;
+    if (!iso) return false;
+    const t = new Date(iso).getTime();
+    if (dateRange?.from) {
+      const f = new Date(dateRange.from);
+      f.setHours(0, 0, 0, 0);
+      if (t < f.getTime()) return false;
+    }
+    if (dateRange?.to) {
+      const e = new Date(dateRange.to);
+      e.setHours(23, 59, 59, 999);
+      if (t > e.getTime()) return false;
+    }
+    return true;
+  };
+
   const filtered = useMemo(() => {
     return leads.filter((l) => {
       if (filter !== "todos" && l.status !== filter) return false;
       if (search && !`${l.name} ${l.phone}`.toLowerCase().includes(search.toLowerCase())) return false;
+      if (!inDateRange(l.lastMessageAt)) return false;
       return true;
     });
-  }, [leads, filter, search]);
+  }, [leads, filter, search, dateRange]);
 
   const handleStatusChange = async (status: LeadStatus) => {
     if (!selected) return;
@@ -130,9 +160,10 @@ export default function Leads() {
       leads.filter((l) => {
         if (sourceFilter !== "todas" && l.source !== sourceFilter) return false;
         if (search && !`${l.name} ${l.phone}`.toLowerCase().includes(search.toLowerCase())) return false;
+        if (!inDateRange(l.lastMessageAt)) return false;
         return true;
       }),
-    [leads, sourceFilter, search]
+    [leads, sourceFilter, search, dateRange]
   );
   const detail = leads.find((l) => l.id === detailId) ?? null;
 
@@ -184,11 +215,82 @@ export default function Leads() {
                 ))}
               </SelectContent>
             </Select>
-            <span className="ml-auto text-xs text-muted-foreground">
-              {kanbanFiltered.length} leads
-            </span>
           </>
         )}
+
+        {/* Date range filter (visible in both views) */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "h-9 gap-2 font-normal",
+                !dateRange?.from && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="h-3.5 w-3.5" />
+              {dateRange?.from ? (
+                dateRange.to ? (
+                  <>
+                    {format(dateRange.from, "dd/MM/yy", { locale: ptBR })} –{" "}
+                    {format(dateRange.to, "dd/MM/yy", { locale: ptBR })}
+                  </>
+                ) : (
+                  format(dateRange.from, "dd/MM/yy", { locale: ptBR })
+                )
+              ) : (
+                <span>Selecionar período</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <div className="flex flex-col sm:flex-row">
+              <div className="flex flex-col gap-1 border-b sm:border-b-0 sm:border-r border-border p-2 min-w-[140px]">
+                {[
+                  { label: "Hoje", days: 0 },
+                  { label: "Últimos 7 dias", days: 6 },
+                  { label: "Últimos 14 dias", days: 13 },
+                  { label: "Últimos 30 dias", days: 29 },
+                  { label: "Últimos 90 dias", days: 89 },
+                ].map((p) => (
+                  <button
+                    key={p.label}
+                    onClick={() => {
+                      const to = new Date();
+                      const from = new Date();
+                      from.setDate(to.getDate() - p.days);
+                      from.setHours(0, 0, 0, 0);
+                      setDateRange({ from, to });
+                    }}
+                    className="rounded-md px-3 py-1.5 text-left text-xs font-medium text-foreground hover:bg-muted"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setDateRange(undefined)}
+                  className="rounded-md px-3 py-1.5 text-left text-xs font-medium text-muted-foreground hover:bg-muted"
+                >
+                  Limpar
+                </button>
+              </div>
+              <Calendar
+                mode="range"
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+                locale={ptBR}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <span className="ml-auto text-xs text-muted-foreground">
+          {(view === "kanban" ? kanbanFiltered.length : filtered.length)} leads
+        </span>
       </div>
 
       {view === "kanban" ? (
@@ -257,7 +359,7 @@ export default function Leads() {
                           </div>
                           <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
                             <span className="inline-flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
+                              <CalendarIcon className="h-3 w-3" />
                               {l.lastMessageAt ? new Date(l.lastMessageAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
                             </span>
                             <span className={cn("rounded-full border px-1.5 py-0.5 text-[9px] font-semibold", meta.color)}>
