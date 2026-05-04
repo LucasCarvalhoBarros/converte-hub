@@ -262,7 +262,7 @@ export default function Leads() {
                           </div>
                           <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
                             <span className="inline-flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
+                              <CalendarIcon className="h-3 w-3" />
                               {l.lastMessageAt ? new Date(l.lastMessageAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
                             </span>
                             <span className={cn("rounded-full border px-1.5 py-0.5 text-[9px] font-semibold", meta.color)}>
