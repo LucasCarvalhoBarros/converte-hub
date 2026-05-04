@@ -10,8 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Lead, LeadStatus, Message, STATUS_LIST, STATUS_META } from "@/lib/types";
 import { getLeads, getMessages, sendMessage, updateLeadStatus } from "@/lib/api";
 import { onWorkspaceChange } from "@/lib/workspace";
+import { getMoments, getLeadMoment, setLeadMoment, onMomentsChange, Moment } from "@/lib/moments";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 // Kanban columns map to existing LeadStatus values
 type KanbanCol = "fez_contato" | "orcamento" | "comprou";
