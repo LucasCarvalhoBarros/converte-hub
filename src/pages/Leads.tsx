@@ -80,6 +80,74 @@ export default function Leads() {
     if (m) toast.success(`Momento atualizado para ${m.label}`);
   };
 
+  const clearFilters = () => {
+    setFilter("todos");
+    setSourceFilter("todas");
+    setSearch("");
+    setDateRange(undefined);
+    toast.success("Filtros limpos");
+  };
+
+  const hasActiveFilters =
+    filter !== "todos" ||
+    sourceFilter !== "todas" ||
+    search.trim() !== "" ||
+    !!dateRange?.from;
+
+  const downloadPdf = async () => {
+    const { default: jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const rows = view === "kanban" ? kanbanFiltered : filtered;
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const now = new Date();
+
+    doc.setFontSize(16);
+    doc.setTextColor(20, 20, 20);
+    doc.text("Converte-ai — Relatório de Leads", 40, 40);
+
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    const periodTxt =
+      dateRange?.from && dateRange?.to
+        ? `Período: ${format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} a ${format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}`
+        : "Período: Todos";
+    const statusTxt = filter === "todos" ? "Todos" : STATUS_META[filter].label;
+    const sourceTxt = sourceFilter === "todas" ? "Todas" : sourceFilter;
+    doc.text(
+      `Gerado em ${format(now, "dd/MM/yyyy HH:mm", { locale: ptBR })}  •  ${periodTxt}  •  Status: ${statusTxt}  •  Origem: ${sourceTxt}  •  Total: ${rows.length}`,
+      40,
+      58
+    );
+
+    autoTable(doc, {
+      startY: 78,
+      head: [["Nome", "Telefone", "Status", "Momento", "Origem", "Última msg"]],
+      body: rows.map((l) => {
+        const momentId = leadMoments[l.id] ?? getLeadMoment(l.id);
+        const moment = moments.find((m) => m.id === momentId);
+        return [
+          l.name,
+          l.phone,
+          STATUS_META[l.status].label,
+          moment?.label ?? "—",
+          l.source,
+          l.lastMessageAt
+            ? format(new Date(l.lastMessageAt), "dd/MM/yyyy HH:mm", { locale: ptBR })
+            : "—",
+        ];
+      }),
+      styles: { fontSize: 9, cellPadding: 6 },
+      headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      margin: { left: 40, right: 40 },
+    });
+
+    const filename = `leads_${format(now, "yyyy-MM-dd_HHmm")}.pdf`;
+    doc.save(filename);
+    toast.success(`Relatório gerado (${rows.length} leads)`);
+  };
+
   useEffect(() => {
     const load = () => {
       getLeads().then((d) => {
