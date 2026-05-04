@@ -356,9 +356,29 @@ export default function Leads() {
           </PopoverContent>
         </Popover>
 
-        <span className="ml-auto text-xs text-muted-foreground">
-          {(view === "kanban" ? kanbanFiltered.length : filtered.length)} leads
-        </span>
+        <div className="ml-auto flex items-center gap-2">
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" /> Limpar filtros
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={downloadPdf}
+            className="h-9 gap-1.5"
+          >
+            <Download className="h-3.5 w-3.5" /> Baixar PDF
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {(view === "kanban" ? kanbanFiltered.length : filtered.length)} leads
+          </span>
+        </div>
       </div>
 
       {view === "kanban" ? (
