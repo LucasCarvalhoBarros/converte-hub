@@ -10,8 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Lead, LeadStatus, Message, STATUS_LIST, STATUS_META } from "@/lib/types";
 import { getLeads, getMessages, sendMessage, updateLeadStatus } from "@/lib/api";
 import { onWorkspaceChange } from "@/lib/workspace";
+import { getMoments, getLeadMoment, setLeadMoment, onMomentsChange, Moment } from "@/lib/moments";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 // Kanban columns map to existing LeadStatus values
 type KanbanCol = "fez_contato" | "orcamento" | "comprou";
@@ -51,6 +53,20 @@ export default function Leads() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<KanbanCol | null>(null);
+  const [moments, setMoments] = useState<Moment[]>([]);
+  const [leadMoments, setLeadMoments] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setMoments(getMoments());
+    return onMomentsChange(() => setMoments(getMoments()));
+  }, []);
+
+  const updateLeadMoment = (leadId: string, momentId: string) => {
+    setLeadMoment(leadId, momentId);
+    setLeadMoments((prev) => ({ ...prev, [leadId]: momentId }));
+    const m = moments.find((x) => x.id === momentId);
+    if (m) toast.success(`Momento atualizado para ${m.label}`);
+  };
 
   useEffect(() => {
     const load = () => {
@@ -499,6 +515,40 @@ export default function Leads() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-muted-foreground">Momento do lead</label>
+                  <Link to="/config/status" className="text-[10px] font-medium text-primary hover:underline">
+                    Configurar
+                  </Link>
+                </div>
+                {moments.length === 0 ? (
+                  <div className="rounded-md border border-dashed border-border p-3 text-xs text-muted-foreground">
+                    Nenhum momento cadastrado.{" "}
+                    <Link to="/config/status" className="text-primary hover:underline">Cadastrar agora</Link>
+                  </div>
+                ) : (
+                  <Select
+                    value={leadMoments[detail.id] ?? getLeadMoment(detail.id) ?? ""}
+                    onValueChange={(v) => updateLeadMoment(detail.id, v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um momento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {moments.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full" style={{ background: m.color }} />
+                            {m.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div className="flex gap-2 pt-2">
