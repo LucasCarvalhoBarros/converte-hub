@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar as CalendarIcon } from "lucide-react";
+import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar as CalendarIcon, X, Download } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
@@ -78,6 +78,74 @@ export default function Leads() {
     setLeadMoments((prev) => ({ ...prev, [leadId]: momentId }));
     const m = moments.find((x) => x.id === momentId);
     if (m) toast.success(`Momento atualizado para ${m.label}`);
+  };
+
+  const clearFilters = () => {
+    setFilter("todos");
+    setSourceFilter("todas");
+    setSearch("");
+    setDateRange(undefined);
+    toast.success("Filtros limpos");
+  };
+
+  const hasActiveFilters =
+    filter !== "todos" ||
+    sourceFilter !== "todas" ||
+    search.trim() !== "" ||
+    !!dateRange?.from;
+
+  const downloadPdf = async () => {
+    const { default: jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const rows = view === "kanban" ? kanbanFiltered : filtered;
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const now = new Date();
+
+    doc.setFontSize(16);
+    doc.setTextColor(20, 20, 20);
+    doc.text("Converte-ai — Relatório de Leads", 40, 40);
+
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    const periodTxt =
+      dateRange?.from && dateRange?.to
+        ? `Período: ${format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} a ${format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}`
+        : "Período: Todos";
+    const statusTxt = filter === "todos" ? "Todos" : STATUS_META[filter].label;
+    const sourceTxt = sourceFilter === "todas" ? "Todas" : sourceFilter;
+    doc.text(
+      `Gerado em ${format(now, "dd/MM/yyyy HH:mm", { locale: ptBR })}  •  ${periodTxt}  •  Status: ${statusTxt}  •  Origem: ${sourceTxt}  •  Total: ${rows.length}`,
+      40,
+      58
+    );
+
+    autoTable(doc, {
+      startY: 78,
+      head: [["Nome", "Telefone", "Status", "Momento", "Origem", "Última msg"]],
+      body: rows.map((l) => {
+        const momentId = leadMoments[l.id] ?? getLeadMoment(l.id);
+        const moment = moments.find((m) => m.id === momentId);
+        return [
+          l.name,
+          l.phone,
+          STATUS_META[l.status].label,
+          moment?.label ?? "—",
+          l.source,
+          l.lastMessageAt
+            ? format(new Date(l.lastMessageAt), "dd/MM/yyyy HH:mm", { locale: ptBR })
+            : "—",
+        ];
+      }),
+      styles: { fontSize: 9, cellPadding: 6 },
+      headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      margin: { left: 40, right: 40 },
+    });
+
+    const filename = `leads_${format(now, "yyyy-MM-dd_HHmm")}.pdf`;
+    doc.save(filename);
+    toast.success(`Relatório gerado (${rows.length} leads)`);
   };
 
   useEffect(() => {
@@ -288,9 +356,29 @@ export default function Leads() {
           </PopoverContent>
         </Popover>
 
-        <span className="ml-auto text-xs text-muted-foreground">
-          {(view === "kanban" ? kanbanFiltered.length : filtered.length)} leads
-        </span>
+        <div className="ml-auto flex items-center gap-2">
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" /> Limpar filtros
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={downloadPdf}
+            className="h-9 gap-1.5"
+          >
+            <Download className="h-3.5 w-3.5" /> Baixar PDF
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {(view === "kanban" ? kanbanFiltered.length : filtered.length)} leads
+          </span>
+        </div>
       </div>
 
       {view === "kanban" ? (
