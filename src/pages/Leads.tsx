@@ -60,6 +60,13 @@ export default function Leads() {
   const [dragOver, setDragOver] = useState<KanbanCol | null>(null);
   const [moments, setMoments] = useState<Moment[]>([]);
   const [leadMoments, setLeadMoments] = useState<Record<string, string>>({});
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(to.getDate() - 6); // últimos 7 dias (incluindo hoje)
+    from.setHours(0, 0, 0, 0);
+    return { from, to };
+  });
 
   useEffect(() => {
     setMoments(getMoments());
@@ -98,13 +105,31 @@ export default function Leads() {
 
   const selected = leads.find((l) => l.id === selectedId) ?? null;
 
+  const inDateRange = (iso?: string) => {
+    if (!dateRange?.from && !dateRange?.to) return true;
+    if (!iso) return false;
+    const t = new Date(iso).getTime();
+    if (dateRange?.from) {
+      const f = new Date(dateRange.from);
+      f.setHours(0, 0, 0, 0);
+      if (t < f.getTime()) return false;
+    }
+    if (dateRange?.to) {
+      const e = new Date(dateRange.to);
+      e.setHours(23, 59, 59, 999);
+      if (t > e.getTime()) return false;
+    }
+    return true;
+  };
+
   const filtered = useMemo(() => {
     return leads.filter((l) => {
       if (filter !== "todos" && l.status !== filter) return false;
       if (search && !`${l.name} ${l.phone}`.toLowerCase().includes(search.toLowerCase())) return false;
+      if (!inDateRange(l.lastMessageAt)) return false;
       return true;
     });
-  }, [leads, filter, search]);
+  }, [leads, filter, search, dateRange]);
 
   const handleStatusChange = async (status: LeadStatus) => {
     if (!selected) return;
@@ -135,9 +160,10 @@ export default function Leads() {
       leads.filter((l) => {
         if (sourceFilter !== "todas" && l.source !== sourceFilter) return false;
         if (search && !`${l.name} ${l.phone}`.toLowerCase().includes(search.toLowerCase())) return false;
+        if (!inDateRange(l.lastMessageAt)) return false;
         return true;
       }),
-    [leads, sourceFilter, search]
+    [leads, sourceFilter, search, dateRange]
   );
   const detail = leads.find((l) => l.id === detailId) ?? null;
 
