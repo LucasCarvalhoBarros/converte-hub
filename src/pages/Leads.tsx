@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar } from "lucide-react";
+import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar as CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Lead, LeadStatus, Message, STATUS_LIST, STATUS_META } from "@/lib/types";
 import { getLeads, getMessages, sendMessage, updateLeadStatus } from "@/lib/api";
 import { onWorkspaceChange } from "@/lib/workspace";
