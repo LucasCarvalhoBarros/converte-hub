@@ -215,11 +215,82 @@ export default function Leads() {
                 ))}
               </SelectContent>
             </Select>
-            <span className="ml-auto text-xs text-muted-foreground">
-              {kanbanFiltered.length} leads
-            </span>
           </>
         )}
+
+        {/* Date range filter (visible in both views) */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "h-9 gap-2 font-normal",
+                !dateRange?.from && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="h-3.5 w-3.5" />
+              {dateRange?.from ? (
+                dateRange.to ? (
+                  <>
+                    {format(dateRange.from, "dd/MM/yy", { locale: ptBR })} –{" "}
+                    {format(dateRange.to, "dd/MM/yy", { locale: ptBR })}
+                  </>
+                ) : (
+                  format(dateRange.from, "dd/MM/yy", { locale: ptBR })
+                )
+              ) : (
+                <span>Selecionar período</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <div className="flex flex-col sm:flex-row">
+              <div className="flex flex-col gap-1 border-b sm:border-b-0 sm:border-r border-border p-2 min-w-[140px]">
+                {[
+                  { label: "Hoje", days: 0 },
+                  { label: "Últimos 7 dias", days: 6 },
+                  { label: "Últimos 14 dias", days: 13 },
+                  { label: "Últimos 30 dias", days: 29 },
+                  { label: "Últimos 90 dias", days: 89 },
+                ].map((p) => (
+                  <button
+                    key={p.label}
+                    onClick={() => {
+                      const to = new Date();
+                      const from = new Date();
+                      from.setDate(to.getDate() - p.days);
+                      from.setHours(0, 0, 0, 0);
+                      setDateRange({ from, to });
+                    }}
+                    className="rounded-md px-3 py-1.5 text-left text-xs font-medium text-foreground hover:bg-muted"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setDateRange(undefined)}
+                  className="rounded-md px-3 py-1.5 text-left text-xs font-medium text-muted-foreground hover:bg-muted"
+                >
+                  Limpar
+                </button>
+              </div>
+              <Calendar
+                mode="range"
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+                locale={ptBR}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <span className="ml-auto text-xs text-muted-foreground">
+          {(view === "kanban" ? kanbanFiltered.length : filtered.length)} leads
+        </span>
       </div>
 
       {view === "kanban" ? (
