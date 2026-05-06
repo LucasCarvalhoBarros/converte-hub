@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar as CalendarIcon, X, Download } from "lucide-react";
+import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar as CalendarIcon, X, Download, Megaphone } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
@@ -16,6 +16,7 @@ import { Lead, LeadStatus, Message, STATUS_LIST, STATUS_META } from "@/lib/types
 import { getLeads, getMessages, sendMessage, updateLeadStatus } from "@/lib/api";
 import { onWorkspaceChange } from "@/lib/workspace";
 import { getMoments, getLeadMoment, setLeadMoment, onMomentsChange, Moment } from "@/lib/moments";
+import { getAds, getLeadAd, setLeadAd, onAdsChange, getAdById, Ad } from "@/lib/ads";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -60,6 +61,8 @@ export default function Leads() {
   const [dragOver, setDragOver] = useState<KanbanCol | null>(null);
   const [moments, setMoments] = useState<Moment[]>([]);
   const [leadMoments, setLeadMoments] = useState<Record<string, string>>({});
+  const [ads, setAds] = useState<Ad[]>([]);
+  const [leadAds, setLeadAds] = useState<Record<string, string>>({});
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
     const to = new Date();
     const from = new Date();
@@ -70,7 +73,10 @@ export default function Leads() {
 
   useEffect(() => {
     setMoments(getMoments());
-    return onMomentsChange(() => setMoments(getMoments()));
+    setAds(getAds());
+    const offM = onMomentsChange(() => setMoments(getMoments()));
+    const offA = onAdsChange(() => setAds(getAds()));
+    return () => { offM(); offA(); };
   }, []);
 
   const updateLeadMoment = (leadId: string, momentId: string) => {
@@ -78,6 +84,18 @@ export default function Leads() {
     setLeadMoments((prev) => ({ ...prev, [leadId]: momentId }));
     const m = moments.find((x) => x.id === momentId);
     if (m) toast.success(`Momento atualizado para ${m.label}`);
+  };
+
+  const updateLeadAd = (leadId: string, adId: string) => {
+    setLeadAd(leadId, adId);
+    setLeadAds((prev) => ({ ...prev, [leadId]: adId }));
+    const a = ads.find((x) => x.id === adId);
+    if (a) toast.success(`Anúncio vinculado: ${a.name}`);
+  };
+
+  const adOf = (leadId: string): Ad | null => {
+    const id = leadAds[leadId] ?? getLeadAd(leadId);
+    return id ? ads.find((a) => a.id === id) ?? null : null;
   };
 
   const clearFilters = () => {
@@ -122,16 +140,18 @@ export default function Leads() {
 
     autoTable(doc, {
       startY: 78,
-      head: [["Nome", "Telefone", "Status", "Momento", "Origem", "Última msg"]],
+      head: [["Nome", "Telefone", "Status", "Momento", "Origem", "Anúncio", "Última msg"]],
       body: rows.map((l) => {
         const momentId = leadMoments[l.id] ?? getLeadMoment(l.id);
         const moment = moments.find((m) => m.id === momentId);
+        const ad = adOf(l.id);
         return [
           l.name,
           l.phone,
           STATUS_META[l.status].label,
           moment?.label ?? "—",
           l.source,
+          ad ? `${ad.name} (${ad.platform})` : "—",
           l.lastMessageAt
             ? format(new Date(l.lastMessageAt), "dd/MM/yyyy HH:mm", { locale: ptBR })
             : "—",
@@ -454,6 +474,11 @@ export default function Leads() {
                               {meta.label}
                             </span>
                           </div>
+                          {adOf(l.id) && (
+                            <div className="mt-2 inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                              <Megaphone className="h-2.5 w-2.5" /> {adOf(l.id)!.name}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -533,11 +558,16 @@ export default function Leads() {
                       <Phone className="h-3 w-3" />
                       <span className="truncate">{l.phone}</span>
                     </div>
-                    <div className="mt-2 flex items-center gap-2">
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
                       <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold", meta.color)}>
                         {meta.label}
                       </span>
                       <span className="text-[10px] text-muted-foreground">• {l.source}</span>
+                      {adOf(l.id) && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary">
+                          <Megaphone className="h-2.5 w-2.5" /> {adOf(l.id)!.name}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </button>
@@ -570,10 +600,18 @@ export default function Leads() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-display text-base font-semibold">{selected.name}</div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                     <Phone className="h-3 w-3" /> {selected.phone}
                     <span className="h-1 w-1 rounded-full bg-muted-foreground" />
                     <span>Origem: {selected.source}</span>
+                    {adOf(selected.id) && (
+                      <>
+                        <span className="h-1 w-1 rounded-full bg-muted-foreground" />
+                        <span className="inline-flex items-center gap-1 text-primary">
+                          <Megaphone className="h-3 w-3" /> {adOf(selected.id)!.name}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <Select value={selected.status} onValueChange={(v) => handleStatusChange(v as LeadStatus)}>
@@ -683,6 +721,41 @@ export default function Leads() {
                   <div className="text-muted-foreground">Última msg</div>
                   <div className="mt-0.5 font-semibold text-foreground">{formatTime(detail.lastMessageAt)}</div>
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-muted-foreground">Anúncio de origem</label>
+                  <Link to="/config/anuncios" className="text-[10px] font-medium text-primary hover:underline">
+                    Gerenciar
+                  </Link>
+                </div>
+                {ads.filter((a) => a.active).length === 0 ? (
+                  <div className="rounded-md border border-dashed border-border p-3 text-xs text-muted-foreground">
+                    Nenhum anúncio ativo.{" "}
+                    <Link to="/config/anuncios" className="text-primary hover:underline">Cadastrar agora</Link>
+                  </div>
+                ) : (
+                  <Select
+                    value={leadAds[detail.id] ?? getLeadAd(detail.id) ?? ""}
+                    onValueChange={(v) => updateLeadAd(detail.id, v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um anúncio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ads.filter((a) => a.active).map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          <div className="flex items-center gap-2">
+                            <Megaphone className="h-3 w-3 text-primary" />
+                            <span>{a.name}</span>
+                            <span className="text-muted-foreground text-[10px]">• {a.platform}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div className="space-y-1.5">

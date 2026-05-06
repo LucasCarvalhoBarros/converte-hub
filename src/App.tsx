@@ -9,6 +9,7 @@ import Login from "./pages/Login.tsx";
 import Leads from "./pages/Leads.tsx";
 import Relatorios from "./pages/Relatorios.tsx";
 import StatusConfig from "./pages/StatusConfig.tsx";
+import AdsConfig from "./pages/AdsConfig.tsx";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/conversas" element={<Leads />} />
           <Route path="/relatorios" element={<Relatorios />} />
           <Route path="/config/status" element={<StatusConfig />} />
+          <Route path="/config/anuncios" element={<AdsConfig />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
