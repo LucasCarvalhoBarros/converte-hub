@@ -474,6 +474,11 @@ export default function Leads() {
                               {meta.label}
                             </span>
                           </div>
+                          {adOf(l.id) && (
+                            <div className="mt-2 inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                              <Megaphone className="h-2.5 w-2.5" /> {adOf(l.id)!.name}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -716,6 +721,41 @@ export default function Leads() {
                   <div className="text-muted-foreground">Última msg</div>
                   <div className="mt-0.5 font-semibold text-foreground">{formatTime(detail.lastMessageAt)}</div>
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-muted-foreground">Anúncio de origem</label>
+                  <Link to="/config/anuncios" className="text-[10px] font-medium text-primary hover:underline">
+                    Gerenciar
+                  </Link>
+                </div>
+                {ads.filter((a) => a.active).length === 0 ? (
+                  <div className="rounded-md border border-dashed border-border p-3 text-xs text-muted-foreground">
+                    Nenhum anúncio ativo.{" "}
+                    <Link to="/config/anuncios" className="text-primary hover:underline">Cadastrar agora</Link>
+                  </div>
+                ) : (
+                  <Select
+                    value={leadAds[detail.id] ?? getLeadAd(detail.id) ?? ""}
+                    onValueChange={(v) => updateLeadAd(detail.id, v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um anúncio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ads.filter((a) => a.active).map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          <div className="flex items-center gap-2">
+                            <Megaphone className="h-3 w-3 text-primary" />
+                            <span>{a.name}</span>
+                            <span className="text-muted-foreground text-[10px]">• {a.platform}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div className="space-y-1.5">
