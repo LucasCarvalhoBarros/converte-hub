@@ -16,6 +16,7 @@ import { Lead, LeadStatus, Message, STATUS_LIST, STATUS_META } from "@/lib/types
 import { getLeads, getMessages, sendMessage, updateLeadStatus } from "@/lib/api";
 import { onWorkspaceChange } from "@/lib/workspace";
 import { getMoments, getLeadMoment, setLeadMoment, onMomentsChange, Moment } from "@/lib/moments";
+import { getAds, getLeadAd, setLeadAd, onAdsChange, getAdById, Ad } from "@/lib/ads";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -60,6 +61,8 @@ export default function Leads() {
   const [dragOver, setDragOver] = useState<KanbanCol | null>(null);
   const [moments, setMoments] = useState<Moment[]>([]);
   const [leadMoments, setLeadMoments] = useState<Record<string, string>>({});
+  const [ads, setAds] = useState<Ad[]>([]);
+  const [leadAds, setLeadAds] = useState<Record<string, string>>({});
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
     const to = new Date();
     const from = new Date();
@@ -70,7 +73,10 @@ export default function Leads() {
 
   useEffect(() => {
     setMoments(getMoments());
-    return onMomentsChange(() => setMoments(getMoments()));
+    setAds(getAds());
+    const offM = onMomentsChange(() => setMoments(getMoments()));
+    const offA = onAdsChange(() => setAds(getAds()));
+    return () => { offM(); offA(); };
   }, []);
 
   const updateLeadMoment = (leadId: string, momentId: string) => {
@@ -78,6 +84,18 @@ export default function Leads() {
     setLeadMoments((prev) => ({ ...prev, [leadId]: momentId }));
     const m = moments.find((x) => x.id === momentId);
     if (m) toast.success(`Momento atualizado para ${m.label}`);
+  };
+
+  const updateLeadAd = (leadId: string, adId: string) => {
+    setLeadAd(leadId, adId);
+    setLeadAds((prev) => ({ ...prev, [leadId]: adId }));
+    const a = ads.find((x) => x.id === adId);
+    if (a) toast.success(`Anúncio vinculado: ${a.name}`);
+  };
+
+  const adOf = (leadId: string): Ad | null => {
+    const id = leadAds[leadId] ?? getLeadAd(leadId);
+    return id ? ads.find((a) => a.id === id) ?? null : null;
   };
 
   const clearFilters = () => {
