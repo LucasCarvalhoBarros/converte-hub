@@ -140,16 +140,18 @@ export default function Leads() {
 
     autoTable(doc, {
       startY: 78,
-      head: [["Nome", "Telefone", "Status", "Momento", "Origem", "Última msg"]],
+      head: [["Nome", "Telefone", "Status", "Momento", "Origem", "Anúncio", "Última msg"]],
       body: rows.map((l) => {
         const momentId = leadMoments[l.id] ?? getLeadMoment(l.id);
         const moment = moments.find((m) => m.id === momentId);
+        const ad = adOf(l.id);
         return [
           l.name,
           l.phone,
           STATUS_META[l.status].label,
           moment?.label ?? "—",
           l.source,
+          ad ? `${ad.name} (${ad.platform})` : "—",
           l.lastMessageAt
             ? format(new Date(l.lastMessageAt), "dd/MM/yyyy HH:mm", { locale: ptBR })
             : "—",
