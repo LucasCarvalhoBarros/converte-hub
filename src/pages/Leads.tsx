@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar as CalendarIcon, X, Download } from "lucide-react";
+import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar as CalendarIcon, X, Download, Megaphone } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
@@ -553,11 +553,16 @@ export default function Leads() {
                       <Phone className="h-3 w-3" />
                       <span className="truncate">{l.phone}</span>
                     </div>
-                    <div className="mt-2 flex items-center gap-2">
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
                       <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold", meta.color)}>
                         {meta.label}
                       </span>
                       <span className="text-[10px] text-muted-foreground">• {l.source}</span>
+                      {adOf(l.id) && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary">
+                          <Megaphone className="h-2.5 w-2.5" /> {adOf(l.id)!.name}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </button>
@@ -590,10 +595,18 @@ export default function Leads() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-display text-base font-semibold">{selected.name}</div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                     <Phone className="h-3 w-3" /> {selected.phone}
                     <span className="h-1 w-1 rounded-full bg-muted-foreground" />
                     <span>Origem: {selected.source}</span>
+                    {adOf(selected.id) && (
+                      <>
+                        <span className="h-1 w-1 rounded-full bg-muted-foreground" />
+                        <span className="inline-flex items-center gap-1 text-primary">
+                          <Megaphone className="h-3 w-3" /> {adOf(selected.id)!.name}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <Select value={selected.status} onValueChange={(v) => handleStatusChange(v as LeadStatus)}>
