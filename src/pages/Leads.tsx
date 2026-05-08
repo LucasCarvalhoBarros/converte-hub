@@ -485,8 +485,11 @@ export default function Leads() {
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <div className="truncate text-sm font-semibold">{l.phone}</div>
-                              <div className="truncate text-xs text-muted-foreground">{l.name}</div>
+                              <div className="truncate text-sm font-semibold">{l.name}</div>
+                              <div className="truncate text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                                <Phone className="h-2.5 w-2.5" />
+                                {l.phone}
+                              </div>
                             </div>
                             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-success/15 text-success">
                               <MessageCircle className="h-3.5 w-3.5" />
