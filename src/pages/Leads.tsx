@@ -16,7 +16,7 @@ import { Lead, LeadStatus, Message, STATUS_LIST, STATUS_META } from "@/lib/types
 import { getLeads, getMessages, sendMessage, updateLeadStatus } from "@/lib/api";
 import { onWorkspaceChange } from "@/lib/workspace";
 import { getMoments, getLeadMoment, setLeadMoment, onMomentsChange, Moment } from "@/lib/moments";
-import { getAds, getLeadAd, setLeadAd, onAdsChange, getAdById, Ad } from "@/lib/ads";
+import { getAds, fetchAds, getLeadAd, setLeadAd, onAdsChange, Ad } from "@/lib/ads";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -74,6 +74,7 @@ export default function Leads() {
   useEffect(() => {
     setMoments(getMoments());
     setAds(getAds());
+    fetchAds().then((a) => setAds(a)).catch(() => {});
     const offM = onMomentsChange(() => setMoments(getMoments()));
     const offA = onAdsChange(() => setAds(getAds()));
     return () => { offM(); offA(); };
