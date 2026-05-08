@@ -84,6 +84,7 @@ export function getAdById(id: string | null | undefined): Ad | null {
 // ---------- API calls ----------
 export async function fetchAds(): Promise<Ad[]> {
   const ws = wsParam();
+  await ensurePlatformsLoaded().catch(() => {});
   const res = await fetch(`${API_URL}/ads?workspace=${ws}`);
   if (!res.ok) throw new Error(`Falha ao listar anúncios (HTTP ${res.status})`);
   const data = (await res.json()) as any[];
