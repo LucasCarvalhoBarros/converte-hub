@@ -1,15 +1,13 @@
 import type { Lead, LeadStatus, Message } from "./types";
-import { getStoredWorkspaceId } from "./workspace";
+
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
   "https://05m7xwli09.execute-api.us-east-1.amazonaws.com/prod";
 
-// Convert workspace id "ws-1" -> "1" (numeric, expected by backend)
+// Workspace fixo em 1 por enquanto
 function wsParam(): string {
-  const raw = getStoredWorkspaceId();
-  const m = /(\d+)/.exec(raw);
-  return m ? m[1] : "1";
+  return "1";
 }
 
 // ---------- Normalization ----------
