@@ -79,10 +79,11 @@ export async function updateLeadStatus(leadId: string, status: LeadStatus): Prom
   return data ? normalizeLead(data) : null;
 }
 
-// POST /conversas/leads/{id} sends an agent message to the lead
+// POST /conversas/leads/{id}/messages sends an agent message to the lead
 export async function sendMessage(leadId: string, text: string): Promise<Message> {
+  const ws = wsParam();
   const payload = { from: "agent" as const, text };
-  const data = await tryFetch<any>(`/conversas/leads/${leadId}`, {
+  const data = await tryFetch<any>(`/conversas/leads/${leadId}/messages?workspace=${ws}`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
