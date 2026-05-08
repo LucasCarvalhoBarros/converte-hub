@@ -407,6 +407,16 @@ export default function Leads() {
           <Button
             variant="outline"
             size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="h-9 gap-1.5"
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
+            Atualizar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={downloadPdf}
             className="h-9 gap-1.5"
           >
