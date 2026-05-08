@@ -56,9 +56,10 @@ export async function getLeads(): Promise<Lead[]> {
   return data.map(normalizeLead);
 }
 
-// GET /conversas/leads/{id} returns the lead with its messages
+// GET /conversas/leads/{id}/messages returns the lead messages
 export async function getMessages(leadId: string): Promise<Message[]> {
-  const data = await tryFetch<any>(`/conversas/leads/${leadId}`);
+  const ws = wsParam();
+  const data = await tryFetch<any>(`/conversas/leads/${leadId}/messages?workspace=${ws}`);
   if (!data) return [];
   const list: any[] = Array.isArray(data)
     ? data
@@ -78,10 +79,11 @@ export async function updateLeadStatus(leadId: string, status: LeadStatus): Prom
   return data ? normalizeLead(data) : null;
 }
 
-// POST /conversas/leads/{id} sends an agent message to the lead
+// POST /conversas/leads/{id}/messages sends an agent message to the lead
 export async function sendMessage(leadId: string, text: string): Promise<Message> {
+  const ws = wsParam();
   const payload = { from: "agent" as const, text };
-  const data = await tryFetch<any>(`/conversas/leads/${leadId}`, {
+  const data = await tryFetch<any>(`/conversas/leads/${leadId}/messages?workspace=${ws}`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
