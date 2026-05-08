@@ -56,9 +56,10 @@ export async function getLeads(): Promise<Lead[]> {
   return data.map(normalizeLead);
 }
 
-// GET /conversas/leads/{id} returns the lead with its messages
+// GET /conversas/leads/{id}/messages returns the lead messages
 export async function getMessages(leadId: string): Promise<Message[]> {
-  const data = await tryFetch<any>(`/conversas/leads/${leadId}`);
+  const ws = wsParam();
+  const data = await tryFetch<any>(`/conversas/leads/${leadId}/messages?workspace=${ws}`);
   if (!data) return [];
   const list: any[] = Array.isArray(data)
     ? data
