@@ -2,6 +2,7 @@
 // Ads are persisted on the backend API; per-lead ad assignment is local.
 
 import { getStoredWorkspaceId } from "./workspace";
+import { ensurePlatformsLoaded, getPlatformById as _getPlatformById, getPlatforms } from "./platforms";
 
 const API_URL = "https://05m7xwli09.execute-api.us-east-1.amazonaws.com/prod";
 
@@ -19,16 +20,13 @@ export type Ad = {
   createdAt?: string;
 };
 
-export const PLATFORMS: { id: number; code: string; name: string }[] = [
-  { id: 1, code: "meta", name: "Meta Ads" },
-  { id: 2, code: "google", name: "Google Ads" },
-];
-
+// Re-export of platforms helpers for backward compatibility with consumers
+// that previously imported PLATFORMS / platformById from this module.
 export function platformById(id: number) {
-  return PLATFORMS.find((p) => p.id === id) ?? PLATFORMS[0];
+  return _getPlatformById(id);
 }
 export function platformByName(name: string) {
-  return PLATFORMS.find((p) => p.name === name) ?? PLATFORMS[0];
+  return getPlatforms().find((p) => p.name === name) ?? null;
 }
 
 // Convert workspace id "ws-1" -> 1 (numeric, expected by backend)
@@ -39,16 +37,16 @@ function wsParam(): string {
 }
 
 function normalize(raw: any): Ad {
-  const platformId = Number(raw.platformId ?? 1);
-  const meta = platformById(platformId);
+  const platformId = Number(raw.platformId ?? 0);
+  const meta = _getPlatformById(platformId);
   return {
     id: String(raw.id),
     code: String(raw.code ?? ""),
     name: String(raw.name ?? ""),
     platformId,
-    platform: raw.platformName ?? meta.name,
-    platformName: raw.platformName ?? meta.name,
-    platformCode: raw.platformCode ?? meta.code,
+    platform: raw.platformName ?? meta?.name ?? "—",
+    platformName: raw.platformName ?? meta?.name,
+    platformCode: raw.platformCode ?? meta?.code,
     url: raw.url ?? undefined,
     campaign: raw.campaign ?? undefined,
     active: Boolean(raw.active),
@@ -86,6 +84,7 @@ export function getAdById(id: string | null | undefined): Ad | null {
 // ---------- API calls ----------
 export async function fetchAds(): Promise<Ad[]> {
   const ws = wsParam();
+  await ensurePlatformsLoaded().catch(() => {});
   const res = await fetch(`${API_URL}/ads?workspace=${ws}`);
   if (!res.ok) throw new Error(`Falha ao listar anúncios (HTTP ${res.status})`);
   const data = (await res.json()) as any[];
