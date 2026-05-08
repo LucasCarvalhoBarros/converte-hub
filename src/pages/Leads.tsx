@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar as CalendarIcon, X, Download, Megaphone } from "lucide-react";
+import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar as CalendarIcon, X, Download, Megaphone, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
@@ -55,6 +55,7 @@ export default function Leads() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [view, setView] = useState<"lista" | "kanban">("kanban");
+  const [refreshing, setRefreshing] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<string>("todas");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -169,16 +170,16 @@ export default function Leads() {
     toast.success(`Relatório gerado (${rows.length} leads)`);
   };
 
+  const loadLeads = () => {
+    return getLeads().then((d) => {
+      setLeads(d);
+      setSelectedId((prev) => (prev && d.some((l) => l.id === prev) ? prev : d[0]?.id ?? null));
+    });
+  };
+
   useEffect(() => {
-    const load = () => {
-      getLeads().then((d) => {
-        setLeads(d);
-        setSelectedId((prev) => (prev && d.some((l) => l.id === prev) ? prev : d[0]?.id ?? null));
-        setDetailId(null);
-      });
-    };
-    load();
-    return onWorkspaceChange(load);
+    loadLeads().then(() => setDetailId(null));
+    return onWorkspaceChange(() => { loadLeads().then(() => setDetailId(null)); });
   }, []);
 
   useEffect(() => {
@@ -187,6 +188,21 @@ export default function Leads() {
       getMessages(selectedId).then(setMessages);
     }
   }, [selectedId]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        loadLeads(),
+        selectedId ? getMessages(selectedId).then(setMessages) : Promise.resolve(),
+      ]);
+      toast.success("Conversas e leads atualizados");
+    } catch {
+      toast.error("Falha ao atualizar");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -388,6 +404,16 @@ export default function Leads() {
               <X className="h-3.5 w-3.5" /> Limpar filtros
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="h-9 gap-1.5"
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
+            Atualizar
+          </Button>
           <Button
             variant="outline"
             size="sm"
