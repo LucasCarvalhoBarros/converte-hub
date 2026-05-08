@@ -2,6 +2,7 @@
 // Ads are persisted on the backend API; per-lead ad assignment is local.
 
 import { getStoredWorkspaceId } from "./workspace";
+import { ensurePlatformsLoaded, getPlatformById as _getPlatformById, getPlatforms } from "./platforms";
 
 const API_URL = "https://05m7xwli09.execute-api.us-east-1.amazonaws.com/prod";
 
@@ -19,16 +20,13 @@ export type Ad = {
   createdAt?: string;
 };
 
-export const PLATFORMS: { id: number; code: string; name: string }[] = [
-  { id: 1, code: "meta", name: "Meta Ads" },
-  { id: 2, code: "google", name: "Google Ads" },
-];
-
+// Re-export of platforms helpers for backward compatibility with consumers
+// that previously imported PLATFORMS / platformById from this module.
 export function platformById(id: number) {
-  return PLATFORMS.find((p) => p.id === id) ?? PLATFORMS[0];
+  return _getPlatformById(id);
 }
 export function platformByName(name: string) {
-  return PLATFORMS.find((p) => p.name === name) ?? PLATFORMS[0];
+  return getPlatforms().find((p) => p.name === name) ?? null;
 }
 
 // Convert workspace id "ws-1" -> 1 (numeric, expected by backend)
