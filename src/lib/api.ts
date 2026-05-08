@@ -1,5 +1,5 @@
 import type { Lead, LeadStatus, Message } from "./types";
-import { getStoredWorkspaceId } from "./workspace";
+
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
