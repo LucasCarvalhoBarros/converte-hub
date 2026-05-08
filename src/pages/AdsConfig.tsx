@@ -14,15 +14,18 @@ import { cn } from "@/lib/utils";
 
 export default function AdsConfig() {
   const [ads, setAds] = useState<Ad[]>([]);
+  const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
-  const [platformId, setPlatformId] = useState<number>(PLATFORMS[0].id);
+  const [platformId, setPlatformId] = useState<number | null>(null);
   const [url, setUrl] = useState("");
   const [filter, setFilter] = useState<"todos" | "ativos" | "inativos">("todos");
+
+  const activePlatforms = platforms.filter((p) => p.active);
 
   const load = async () => {
     setLoading(true);
@@ -38,11 +41,18 @@ export default function AdsConfig() {
 
   useEffect(() => {
     load();
+    fetchPlatforms().then(setPlatforms).catch(() => {});
     const off = onAdsChange(() => setAds(getAds()));
+    const offP = onPlatformsChange(() => setPlatforms(getPlatforms()));
     const offWs = onWorkspaceChange(() => load());
-    return () => { off(); offWs(); };
+    return () => { off(); offP(); offWs(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Default platform select to first active when list arrives
+  useEffect(() => {
+    if (platformId == null && activePlatforms[0]) setPlatformId(activePlatforms[0].id);
+  }, [activePlatforms, platformId]);
 
   const handleAdd = async () => {
     const n = name.trim();
