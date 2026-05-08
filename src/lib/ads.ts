@@ -37,16 +37,16 @@ function wsParam(): string {
 }
 
 function normalize(raw: any): Ad {
-  const platformId = Number(raw.platformId ?? 1);
-  const meta = platformById(platformId);
+  const platformId = Number(raw.platformId ?? 0);
+  const meta = _getPlatformById(platformId);
   return {
     id: String(raw.id),
     code: String(raw.code ?? ""),
     name: String(raw.name ?? ""),
     platformId,
-    platform: raw.platformName ?? meta.name,
-    platformName: raw.platformName ?? meta.name,
-    platformCode: raw.platformCode ?? meta.code,
+    platform: raw.platformName ?? meta?.name ?? "—",
+    platformName: raw.platformName ?? meta?.name,
+    platformCode: raw.platformCode ?? meta?.code,
     url: raw.url ?? undefined,
     campaign: raw.campaign ?? undefined,
     active: Boolean(raw.active),
