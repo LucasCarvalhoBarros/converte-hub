@@ -170,16 +170,16 @@ export default function Leads() {
     toast.success(`Relatório gerado (${rows.length} leads)`);
   };
 
+  const loadLeads = () => {
+    return getLeads().then((d) => {
+      setLeads(d);
+      setSelectedId((prev) => (prev && d.some((l) => l.id === prev) ? prev : d[0]?.id ?? null));
+    });
+  };
+
   useEffect(() => {
-    const load = () => {
-      getLeads().then((d) => {
-        setLeads(d);
-        setSelectedId((prev) => (prev && d.some((l) => l.id === prev) ? prev : d[0]?.id ?? null));
-        setDetailId(null);
-      });
-    };
-    load();
-    return onWorkspaceChange(load);
+    loadLeads().then(() => setDetailId(null));
+    return onWorkspaceChange(() => { loadLeads().then(() => setDetailId(null)); });
   }, []);
 
   useEffect(() => {
@@ -188,6 +188,21 @@ export default function Leads() {
       getMessages(selectedId).then(setMessages);
     }
   }, [selectedId]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        loadLeads(),
+        selectedId ? getMessages(selectedId).then(setMessages) : Promise.resolve(),
+      ]);
+      toast.success("Conversas e leads atualizados");
+    } catch {
+      toast.error("Falha ao atualizar");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
