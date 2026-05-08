@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, MessageSquare, Settings, LogOut, Search, Bell, BarChart3, Tag, Megaphone } from "lucide-react";
+import { LayoutDashboard, Users, MessageSquare, Settings, LogOut, Search, Bell, BarChart3, Tag, Megaphone, Layers } from "lucide-react";
 import { Logo } from "./Logo";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { auth, Session } from "@/lib/auth";
@@ -15,6 +15,7 @@ const nav = [
   { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/config/status", label: "Status do funil", icon: Tag },
   { to: "/config/anuncios", label: "Anúncios", icon: Megaphone },
+  { to: "/config/plataformas", label: "Plataformas", icon: Layers },
   { to: "/config", label: "Configurações", icon: Settings },
 ];
 
