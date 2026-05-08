@@ -1,64 +1,89 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Save, Megaphone, ExternalLink } from "lucide-react";
+import { Plus, Trash2, Megaphone, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getAds, saveAds, Ad } from "@/lib/ads";
+import { Ad, PLATFORMS, fetchAds, getAds, createAd, updateAd, deleteAd, onAdsChange } from "@/lib/ads";
+import { onWorkspaceChange } from "@/lib/workspace";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-const PLATFORMS = ["Instagram Ads", "Facebook Ads", "Google Ads", "TikTok Ads", "YouTube Ads", "LinkedIn Ads", "Outro"];
-
 export default function AdsConfig() {
   const [ads, setAds] = useState<Ad[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const [code, setCode] = useState("");
   const [name, setName] = useState("");
-  const [platform, setPlatform] = useState(PLATFORMS[0]);
-  const [campaign, setCampaign] = useState("");
+  const [platformId, setPlatformId] = useState<number>(PLATFORMS[0].id);
   const [url, setUrl] = useState("");
   const [filter, setFilter] = useState<"todos" | "ativos" | "inativos">("todos");
 
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchAds();
+      setAds(data);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao carregar anúncios");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    setAds(getAds());
+    load();
+    const off = onAdsChange(() => setAds(getAds()));
+    const offWs = onWorkspaceChange(() => load());
+    return () => { off(); offWs(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const persist = (next: Ad[]) => {
-    setAds(next);
-    saveAds(next);
-  };
-
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const n = name.trim();
-    if (!n) {
-      toast.error("Informe o nome do anúncio");
-      return;
+    const c = code.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    if (!n) { toast.error("Informe o nome do anúncio"); return; }
+    if (!c) { toast.error("Informe o código (slug) do anúncio"); return; }
+    setSaving(true);
+    try {
+      await createAd({ code: c, name: n, platformId, url: url.trim() || undefined, active: true });
+      setCode(""); setName(""); setUrl("");
+      toast.success("Anúncio cadastrado");
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao criar anúncio");
+    } finally {
+      setSaving(false);
     }
-    const id = "ad_" + n.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") + "_" + Date.now().toString(36);
-    const next: Ad = {
-      id,
-      name: n,
-      platform,
-      campaign: campaign.trim() || undefined,
-      url: url.trim() || undefined,
-      active: true,
-      createdAt: new Date().toISOString(),
-    };
-    persist([next, ...ads]);
-    setName("");
-    setCampaign("");
-    setUrl("");
-    toast.success("Anúncio cadastrado");
   };
 
-  const handleRemove = (id: string) => {
-    persist(ads.filter((a) => a.id !== id));
-    toast.success("Anúncio removido");
+  const handleRemove = async (id: string) => {
+    setBusyId(id);
+    try {
+      await deleteAd(id);
+      toast.success("Anúncio removido");
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao remover");
+    } finally {
+      setBusyId(null);
+    }
   };
 
-  const handleField = (id: string, patch: Partial<Ad>) => {
-    persist(ads.map((a) => (a.id === id ? { ...a, ...patch } : a)));
+  const handleField = async (id: string, patch: Partial<Ad> & { platformId?: number }) => {
+    setBusyId(id);
+    // optimistic
+    setAds((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } as Ad : a)));
+    try {
+      await updateAd(id, patch);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao atualizar");
+      load();
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const visible = ads.filter((a) =>
@@ -68,13 +93,19 @@ export default function AdsConfig() {
   return (
     <AppShell>
       <div className="mx-auto max-w-4xl p-4 lg:p-8 space-y-6">
-        <div>
-          <h1 className="font-display text-2xl font-semibold flex items-center gap-2">
-            <Megaphone className="h-6 w-6 text-primary" /> Anúncios
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Cadastre e gerencie os anúncios que originam seus leads. O anúncio pode ser vinculado a cada lead na tela de Leads.
-          </p>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="font-display text-2xl font-semibold flex items-center gap-2">
+              <Megaphone className="h-6 w-6 text-primary" /> Anúncios
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Cadastre e gerencie os anúncios que originam seus leads.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={load} disabled={loading} className="gap-2">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Atualizar
+          </Button>
         </div>
 
         <Card className="p-5 space-y-3">
@@ -83,25 +114,25 @@ export default function AdsConfig() {
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nome do anúncio (ex: Promo Verão)"
+              placeholder="Nome do anúncio (ex: Campanha Furadeira)"
+              maxLength={80}
+            />
+            <Input
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="Código único (ex: furadeira_bosch)"
               maxLength={60}
             />
-            <Select value={platform} onValueChange={setPlatform}>
+            <Select value={String(platformId)} onValueChange={(v) => setPlatformId(Number(v))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {PLATFORMS.map((p) => (
-                  <SelectItem key={p} value={p}>{p}</SelectItem>
+                  <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Input
-              value={campaign}
-              onChange={(e) => setCampaign(e.target.value)}
-              placeholder="Campanha (opcional)"
-              maxLength={60}
-            />
             <Input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -109,8 +140,9 @@ export default function AdsConfig() {
             />
           </div>
           <div className="flex justify-end">
-            <Button onClick={handleAdd} className="gap-2 bg-gradient-primary hover:opacity-95 shadow-glow">
-              <Plus className="h-4 w-4" /> Adicionar anúncio
+            <Button onClick={handleAdd} disabled={saving} className="gap-2 bg-gradient-primary hover:opacity-95 shadow-glow">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              Adicionar anúncio
             </Button>
           </div>
         </Card>
@@ -136,7 +168,13 @@ export default function AdsConfig() {
             </div>
           </div>
 
-          {visible.length === 0 && (
+          {loading && (
+            <div className="flex items-center justify-center py-8 text-sm text-muted-foreground gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
+            </div>
+          )}
+
+          {!loading && visible.length === 0 && (
             <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
               Nenhum anúncio encontrado.
             </div>
@@ -152,18 +190,30 @@ export default function AdsConfig() {
                 )}
               >
                 <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] items-center gap-3">
-                  <div className="min-w-0 space-y-1">
+                  <div className="min-w-0 space-y-1.5">
                     <div className="flex items-center gap-2">
                       <Megaphone className="h-3.5 w-3.5 text-primary shrink-0" />
                       <Input
-                        value={a.name}
-                        onChange={(e) => handleField(a.id, { name: e.target.value })}
+                        defaultValue={a.name}
+                        onBlur={(e) => e.target.value !== a.name && handleField(a.id, { name: e.target.value })}
                         className="h-8 font-semibold"
                       />
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                      <span className="rounded-full border border-border px-2 py-0.5 font-medium">{a.platform}</span>
-                      {a.campaign && <span>• {a.campaign}</span>}
+                      <Select
+                        value={String(a.platformId)}
+                        onValueChange={(v) => handleField(a.id, { platformId: Number(v) })}
+                      >
+                        <SelectTrigger className="h-7 w-auto gap-1 px-2 text-[11px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PLATFORMS.map((p) => (
+                            <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <span className="rounded-full border border-border px-2 py-0.5 font-mono">{a.code}</span>
                       {a.url && (
                         <a
                           href={a.url}
@@ -180,15 +230,17 @@ export default function AdsConfig() {
                     <span className="text-muted-foreground">Ativo</span>
                     <Switch
                       checked={a.active}
+                      disabled={busyId === a.id}
                       onCheckedChange={(v) => handleField(a.id, { active: v })}
                     />
                   </div>
                   <button
                     onClick={() => handleRemove(a.id)}
-                    className="p-1.5 rounded-md text-destructive hover:bg-destructive/10 justify-self-end"
+                    disabled={busyId === a.id}
+                    className="p-1.5 rounded-md text-destructive hover:bg-destructive/10 justify-self-end disabled:opacity-50"
                     aria-label="Remover"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    {busyId === a.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
