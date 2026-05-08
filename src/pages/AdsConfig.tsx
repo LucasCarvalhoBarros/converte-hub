@@ -59,6 +59,7 @@ export default function AdsConfig() {
     const c = code.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
     if (!n) { toast.error("Informe o nome do anúncio"); return; }
     if (!c) { toast.error("Informe o código (slug) do anúncio"); return; }
+    if (platformId == null) { toast.error("Selecione uma plataforma"); return; }
     setSaving(true);
     try {
       await createAd({ code: c, name: n, platformId, url: url.trim() || undefined, active: true });
@@ -134,12 +135,12 @@ export default function AdsConfig() {
               placeholder="Código único (ex: furadeira_bosch)"
               maxLength={60}
             />
-            <Select value={String(platformId)} onValueChange={(v) => setPlatformId(Number(v))}>
+            <Select value={platformId == null ? "" : String(platformId)} onValueChange={(v) => setPlatformId(Number(v))}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder={activePlatforms.length ? "Selecione" : "Cadastre uma plataforma"} />
               </SelectTrigger>
               <SelectContent>
-                {PLATFORMS.map((p) => (
+                {activePlatforms.map((p) => (
                   <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                 ))}
               </SelectContent>
@@ -219,7 +220,7 @@ export default function AdsConfig() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {PLATFORMS.map((p) => (
+                          {activePlatforms.map((p) => (
                             <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                           ))}
                         </SelectContent>
