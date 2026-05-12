@@ -21,6 +21,8 @@ function normalizeLead(raw: any): Lead {
     avatarUrl: raw.avatarUrl ?? undefined,
     lastMessageAt: raw.lastMessageAt ?? raw.updatedAt ?? raw.createdAt ?? undefined,
     unread: typeof raw.unread === "number" ? raw.unread : undefined,
+    adId: raw.adId != null ? String(raw.adId) : null,
+    funnelStatusId: raw.funnelStatusId != null ? String(raw.funnelStatusId) : null,
   };
 }
 
