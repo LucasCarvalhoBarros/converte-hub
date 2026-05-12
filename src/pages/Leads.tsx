@@ -791,7 +791,7 @@ export default function Leads() {
                   </div>
                 ) : (
                   <Select
-                    value={leadAds[detail.id] ?? getLeadAd(detail.id) ?? ""}
+                    value={leadAds[detail.id] ?? detail.adId ?? ""}
                     onValueChange={(v) => updateLeadAd(detail.id, v)}
                   >
                     <SelectTrigger>
