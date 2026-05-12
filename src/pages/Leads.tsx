@@ -78,7 +78,7 @@ export default function Leads() {
     setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, funnelStatusId: momentId } : l)));
     const m = moments.find((x) => String(x.id) === momentId);
     if (m) toast.success(`Status do funil atualizado para ${m.label}`);
-    apiUpdateLeadFunnelStatus(leadId, momentId).catch(() => {
+    updateLeadFunnelStatus(leadId, momentId).catch(() => {
       toast.error("Falha ao salvar status do funil");
     });
   };
