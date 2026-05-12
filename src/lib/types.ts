@@ -15,6 +15,8 @@ export interface Lead {
   avatarUrl?: string;
   lastMessageAt?: string;
   unread?: number;
+  adId?: string | null;
+  funnelStatusId?: string | null;
 }
 
 export interface Message {
