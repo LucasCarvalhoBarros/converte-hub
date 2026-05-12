@@ -76,7 +76,7 @@ export default function Leads() {
   const updateLeadMoment = (leadId: string, momentId: string) => {
     setLeadMoments((prev) => ({ ...prev, [leadId]: momentId }));
     const m = moments.find((x) => String(x.id) === momentId);
-    if (m) toast.success(`Momento atualizado para ${m.label}`);
+    if (m) toast.success(`Status do funil atualizado para ${m.label}`);
   };
 
   const updateLeadAd = (leadId: string, adId: string) => {
@@ -133,7 +133,7 @@ export default function Leads() {
 
     autoTable(doc, {
       startY: 78,
-      head: [["Nome", "Telefone", "Status", "Momento", "Origem", "Anúncio", "Última msg"]],
+      head: [["Nome", "Telefone", "Característica", "Status do funil", "Origem", "Anúncio", "Última msg"]],
       body: rows.map((l) => {
         const momentId = leadMoments[l.id];
         const moment = moments.find((m) => String(m.id) === momentId);
@@ -231,13 +231,13 @@ export default function Leads() {
     if (!selected) return;
     setLeads((prev) => prev.map((l) => (l.id === selected.id ? { ...l, status } : l)));
     await updateLeadStatus(selected.id, status);
-    toast.success(`Status atualizado para ${STATUS_META[status].label}`);
+    toast.success(`Característica atualizada para ${STATUS_META[status].label}`);
   };
 
   const updateStatusFor = async (leadId: string, status: LeadStatus) => {
     setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status } : l)));
     await updateLeadStatus(leadId, status);
-    toast.success(`Status atualizado para ${STATUS_META[status].label}`);
+    toast.success(`Característica atualizada para ${STATUS_META[status].label}`);
   };
 
   const handleSend = async () => {
@@ -805,7 +805,7 @@ export default function Leads() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Status</label>
+                <label className="text-xs font-medium text-muted-foreground">Característica do lead</label>
                 <Select value={detail.status} onValueChange={(v) => updateStatusFor(detail.id, v as LeadStatus)}>
                   <SelectTrigger>
                     <div className="flex items-center gap-2">
@@ -828,7 +828,7 @@ export default function Leads() {
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-muted-foreground">Momento do lead</label>
+                  <label className="text-xs font-medium text-muted-foreground">Status do funil</label>
                   <Link to="/config/status" className="text-[10px] font-medium text-primary hover:underline">
                     Configurar
                   </Link>
