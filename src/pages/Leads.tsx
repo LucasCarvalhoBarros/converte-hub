@@ -449,9 +449,9 @@ export default function Leads() {
               </div>
             ) : moments.map((col) => {
               const items = kanbanFiltered.filter((l) => {
-                const mid = leadMoments[l.id];
+                const mid = leadMoments[l.id] ?? l.funnelStatusId ?? null;
                 if (mid) return String(col.id) === mid;
-                // Sem momento atribuído → cai na primeira coluna
+                // Sem status do funil atribuído → cai na primeira coluna
                 return col.id === moments[0].id;
               });
               const isOver = dragOver === col.id;
