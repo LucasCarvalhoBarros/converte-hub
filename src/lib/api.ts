@@ -74,9 +74,28 @@ export async function getMessages(leadId: string): Promise<Message[]> {
 }
 
 export async function updateLeadStatus(leadId: string, status: LeadStatus): Promise<Lead | null> {
-  const data = await tryFetch<any>(`/conversas/leads/${leadId}`, {
+  const ws = wsParam();
+  const data = await tryFetch<any>(`/conversas/leads/${leadId}?workspace=${ws}`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
+  });
+  return data ? normalizeLead(data) : null;
+}
+
+export async function updateLeadFunnelStatus(leadId: string, funnelStatusId: string | null): Promise<Lead | null> {
+  const ws = wsParam();
+  const data = await tryFetch<any>(`/conversas/leads/${leadId}?workspace=${ws}`, {
+    method: "PATCH",
+    body: JSON.stringify({ funnelStatusId: funnelStatusId != null ? Number(funnelStatusId) : null }),
+  });
+  return data ? normalizeLead(data) : null;
+}
+
+export async function updateLeadAd(leadId: string, adId: string | null): Promise<Lead | null> {
+  const ws = wsParam();
+  const data = await tryFetch<any>(`/conversas/leads/${leadId}?workspace=${ws}`, {
+    method: "PATCH",
+    body: JSON.stringify({ adId: adId != null ? Number(adId) : null }),
   });
   return data ? normalizeLead(data) : null;
 }
