@@ -462,7 +462,8 @@ export default function Leads() {
                   onDragLeave={() => setDragOver((c) => (c === col.id ? null : c))}
                   onDrop={() => {
                     if (dragId) {
-                      const currentMid = leadMoments[dragId] ?? String(moments[0].id);
+                      const lead = leads.find((x) => x.id === dragId);
+                      const currentMid = leadMoments[dragId] ?? lead?.funnelStatusId ?? String(moments[0].id);
                       if (currentMid !== String(col.id)) {
                         updateLeadMoment(dragId, String(col.id));
                       }
