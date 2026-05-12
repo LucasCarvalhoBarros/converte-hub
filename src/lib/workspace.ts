@@ -9,6 +9,7 @@ export interface Workspace {
 
 export const WORKSPACES: Workspace[] = [
   { id: "1", name: "NUMERO TESTE", phone: "019983592739", avatarColor: "from-primary to-primary-glow" },
+  { id: "2", name: "NUMERO TESTE 2", phone: "019983592740", avatarColor: "from-status-cliente to-success" },
 ];
 
 const STORAGE_KEY = "converte-ai:workspace";
