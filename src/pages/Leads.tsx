@@ -13,10 +13,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Lead, LeadStatus, Message, STATUS_LIST, STATUS_META } from "@/lib/types";
-import { getLeads, getMessages, sendMessage, updateLeadStatus } from "@/lib/api";
+import { getLeads, getMessages, sendMessage, updateLeadStatus, updateLeadFunnelStatus, updateLeadAd as apiUpdateLeadAd } from "@/lib/api";
 import { onWorkspaceChange } from "@/lib/workspace";
 import { fetchMoments, onMomentsChange, Moment } from "@/lib/moments";
-import { getAds, fetchAds, getLeadAd, setLeadAd, onAdsChange, Ad } from "@/lib/ads";
+import { getAds, fetchAds, onAdsChange, Ad } from "@/lib/ads";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -75,19 +75,27 @@ export default function Leads() {
 
   const updateLeadMoment = (leadId: string, momentId: string) => {
     setLeadMoments((prev) => ({ ...prev, [leadId]: momentId }));
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, funnelStatusId: momentId } : l)));
     const m = moments.find((x) => String(x.id) === momentId);
     if (m) toast.success(`Status do funil atualizado para ${m.label}`);
+    updateLeadFunnelStatus(leadId, momentId).catch(() => {
+      toast.error("Falha ao salvar status do funil");
+    });
   };
 
   const updateLeadAd = (leadId: string, adId: string) => {
-    setLeadAd(leadId, adId);
     setLeadAds((prev) => ({ ...prev, [leadId]: adId }));
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, adId } : l)));
     const a = ads.find((x) => x.id === adId);
     if (a) toast.success(`Anúncio vinculado: ${a.name}`);
+    apiUpdateLeadAd(leadId, adId).catch(() => {
+      toast.error("Falha ao salvar anúncio");
+    });
   };
 
   const adOf = (leadId: string): Ad | null => {
-    const id = leadAds[leadId] ?? getLeadAd(leadId);
+    const lead = leads.find((l) => l.id === leadId);
+    const id = leadAds[leadId] ?? lead?.adId ?? null;
     return id ? ads.find((a) => a.id === id) ?? null : null;
   };
 
@@ -135,7 +143,7 @@ export default function Leads() {
       startY: 78,
       head: [["Nome", "Telefone", "Característica", "Status do funil", "Origem", "Anúncio", "Última msg"]],
       body: rows.map((l) => {
-        const momentId = leadMoments[l.id];
+        const momentId = leadMoments[l.id] ?? l.funnelStatusId ?? null;
         const moment = moments.find((m) => String(m.id) === momentId);
         const ad = adOf(l.id);
         return [
@@ -441,9 +449,9 @@ export default function Leads() {
               </div>
             ) : moments.map((col) => {
               const items = kanbanFiltered.filter((l) => {
-                const mid = leadMoments[l.id];
+                const mid = leadMoments[l.id] ?? l.funnelStatusId ?? null;
                 if (mid) return String(col.id) === mid;
-                // Sem momento atribuído → cai na primeira coluna
+                // Sem status do funil atribuído → cai na primeira coluna
                 return col.id === moments[0].id;
               });
               const isOver = dragOver === col.id;
@@ -454,7 +462,8 @@ export default function Leads() {
                   onDragLeave={() => setDragOver((c) => (c === col.id ? null : c))}
                   onDrop={() => {
                     if (dragId) {
-                      const currentMid = leadMoments[dragId] ?? String(moments[0].id);
+                      const lead = leads.find((x) => x.id === dragId);
+                      const currentMid = leadMoments[dragId] ?? lead?.funnelStatusId ?? String(moments[0].id);
                       if (currentMid !== String(col.id)) {
                         updateLeadMoment(dragId, String(col.id));
                       }
@@ -783,7 +792,7 @@ export default function Leads() {
                   </div>
                 ) : (
                   <Select
-                    value={leadAds[detail.id] ?? getLeadAd(detail.id) ?? ""}
+                    value={leadAds[detail.id] ?? detail.adId ?? ""}
                     onValueChange={(v) => updateLeadAd(detail.id, v)}
                   >
                     <SelectTrigger>
@@ -818,7 +827,7 @@ export default function Leads() {
                   </div>
                 ) : (
                   <Select
-                    value={leadMoments[detail.id] ?? ""}
+                    value={leadMoments[detail.id] ?? detail.funnelStatusId ?? ""}
                     onValueChange={(v) => updateLeadMoment(detail.id, v)}
                   >
                     <SelectTrigger>
