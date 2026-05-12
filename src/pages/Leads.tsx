@@ -21,17 +21,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
-// Kanban columns map to existing LeadStatus values
-type KanbanCol = "fez_contato" | "orcamento" | "comprou";
-const KANBAN_COLS: { key: KanbanCol; label: string; statuses: LeadStatus[]; primaryStatus: LeadStatus; accent: string; bar: string }[] = [
-  { key: "fez_contato", label: "Fez Contato", statuses: ["novo_lead", "em_atendimento"], primaryStatus: "novo_lead", accent: "bg-status-novo/10", bar: "bg-status-novo" },
-  { key: "orcamento", label: "Orçamento", statuses: ["interessado", "quente"], primaryStatus: "interessado", accent: "bg-status-interessado/10", bar: "bg-status-interessado" },
-  { key: "comprou", label: "Comprou", statuses: ["cliente"], primaryStatus: "cliente", accent: "bg-status-cliente/10", bar: "bg-status-cliente" },
-];
-function colOfStatus(s: LeadStatus): KanbanCol | null {
-  for (const c of KANBAN_COLS) if (c.statuses.includes(s)) return c.key;
-  return null;
-}
+// Kanban columns are dynamic — derived from "Status do funil" (moments).
 
 function formatTime(iso?: string) {
   if (!iso) return "";
@@ -59,7 +49,7 @@ export default function Leads() {
   const [sourceFilter, setSourceFilter] = useState<string>("todas");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
-  const [dragOver, setDragOver] = useState<KanbanCol | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
   const [moments, setMoments] = useState<Moment[]>([]);
   const [leadMoments, setLeadMoments] = useState<Record<string, string>>({});
   const [ads, setAds] = useState<Ad[]>([]);
@@ -431,33 +421,58 @@ export default function Leads() {
 
       {view === "kanban" ? (
         <div className="h-[calc(100%-57px)] overflow-x-auto bg-muted/20 p-4 lg:p-6">
-          <div className="grid h-full grid-cols-1 md:grid-cols-3 gap-4 min-w-[720px]">
-            {KANBAN_COLS.map((col) => {
-              const items = kanbanFiltered.filter((l) => col.statuses.includes(l.status));
-              const isOver = dragOver === col.key;
+          <div className="flex h-full gap-4">
+            {moments.length === 0 ? (
+              <div className="col-span-full flex h-full items-center justify-center">
+                <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center max-w-md">
+                  <h3 className="font-display text-base font-semibold mb-1">
+                    Nenhum status do funil cadastrado
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    As colunas do kanban são definidas pelos status do funil.
+                  </p>
+                  <Link
+                    to="/config/status"
+                    className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:opacity-95"
+                  >
+                    Configurar status do funil
+                  </Link>
+                </div>
+              </div>
+            ) : moments.map((col) => {
+              const items = kanbanFiltered.filter((l) => {
+                const mid = leadMoments[l.id];
+                if (mid) return String(col.id) === mid;
+                // Sem momento atribuído → cai na primeira coluna
+                return col.id === moments[0].id;
+              });
+              const isOver = dragOver === col.id;
               return (
                 <div
-                  key={col.key}
-                  onDragOver={(e) => { e.preventDefault(); setDragOver(col.key); }}
-                  onDragLeave={() => setDragOver((c) => (c === col.key ? null : c))}
+                  key={col.id}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(col.id); }}
+                  onDragLeave={() => setDragOver((c) => (c === col.id ? null : c))}
                   onDrop={() => {
                     if (dragId) {
-                      const lead = leads.find((l) => l.id === dragId);
-                      if (lead && !col.statuses.includes(lead.status)) {
-                        updateStatusFor(dragId, col.primaryStatus);
+                      const currentMid = leadMoments[dragId] ?? String(moments[0].id);
+                      if (currentMid !== String(col.id)) {
+                        updateLeadMoment(dragId, String(col.id));
                       }
                     }
                     setDragId(null);
                     setDragOver(null);
                   }}
                   className={cn(
-                    "flex flex-col rounded-xl border border-border bg-card transition-colors",
+                    "flex w-[300px] shrink-0 flex-col rounded-xl border border-border bg-card transition-colors",
                     isOver && "border-primary bg-primary/5"
                   )}
                 >
                   <div className="flex items-center justify-between border-b border-border px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <span className={cn("h-2 w-2 rounded-full", col.bar)} />
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ background: col.color }}
+                      />
                       <h3 className="font-display text-sm font-semibold">{col.label}</h3>
                       <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
                         {items.length}
