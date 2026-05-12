@@ -1,76 +1,61 @@
-# Plano: CRUD de Plataformas (origens de anúncio)
+## Objetivo
 
-Vou criar uma nova tela `/config/plataformas` para gerenciar as plataformas (Meta, Google, TikTok, etc.) e plugar o dropdown da tela de Anúncios para consumir esse cadastro vindo da sua API, em vez do array fixo `PLATFORMS`.
+Substituir o `src/lib/moments.ts` (hoje em localStorage) por chamadas HTTP aos endpoints `/funil/status` já prontos no backend, mantendo o comportamento da tela `StatusConfig` (criar, editar, excluir, reordenar com "Salvar alterações") e ajustando o consumo em `Leads.tsx`.
 
-## APIs que você precisa criar
+## O que vai mudar
 
-Mesmo padrão das APIs de Ads (com query string `?workspace=`), só que não precisa de workspace se a tabela for global. **Me confirme**: a tabela de plataformas é **global** (compartilhada entre todos workspaces) ou **por workspace**? Vou assumir **global** abaixo — se for por workspace, basta acrescentar `?workspace={id}` em todas, igual ao Ads.
+1. **`src/lib/moments.ts` — reescrita completa**
+   - Remover toda persistência em localStorage (inclusive `LEAD_MOMENT_KEY` e os defaults).
+   - Novo tipo:
+     ```ts
+     type Moment = {
+       id: number;          // vem do backend
+       code: string;        // identificador lógico
+       label: string;
+       color: string;       // hex (#rrggbb)
+       order: number;
+       active?: boolean;
+     }
+     ```
+   - Novas funções (todas usando `workspace` via `getStoredWorkspaceId()` em `?workspace={id}`):
+     - `fetchMoments(): Promise<Moment[]>` → `GET /funil/status`
+     - `createMoment({ code, label, color, order }): Promise<Moment>` → `POST`
+     - `updateMoment(id, patch): Promise<void>` → `PATCH /funil/status/{id}`
+     - `deleteMoment(id): Promise<void>` → `DELETE /funil/status/{id}`
+     - `reorderMoments(items: {id:number; order:number}[]): Promise<void>` → `PUT /funil/status/reorder`
+   - Manter `onMomentsChange` (event bus simples) para o `Leads.tsx` recarregar quando algo mudar.
+   - Remover `getLeadMoment` / `setLeadMoment` (associação lead↔momento). Não há endpoint para isso ainda; o `Leads.tsx` deixará de exibir/salvar o "Momento do lead" até existir backend (ver item 3).
 
-Base URL sugerida: `https://05m7xwli09.execute-api.us-east-1.amazonaws.com/prod`
+2. **`src/pages/StatusConfig.tsx` — integrar à API**
+   - Carregar lista no `useEffect` via `fetchMoments()` (com loading + tratamento de erro via `toast`).
+   - Recarregar ao trocar de workspace (`onWorkspaceChange`).
+   - **Criar:** chamar `createMoment` e dar push no resultado retornado (com `id` do backend). Gerar `code` a partir do label (UPPER_SNAKE, sem acento) já que o backend exige.
+   - **Renomear/cor:** marcar item como "dirty" no estado local; ao clicar **Salvar alterações**, disparar `PATCH` apenas para itens alterados, em paralelo (`Promise.all`).
+   - **Excluir:** chamar `deleteMoment` imediatamente (com confirmação) e remover do estado.
+   - **Reordenar:** apenas local (setas ↑/↓). Ao clicar **Salvar alterações**, enviar `PUT /funil/status/reorder` com `[{id, order}]` baseado na ordem atual.
+   - O botão **Salvar alterações** passa a fazer: PATCHs pendentes + reorder, em sequência, com toast de sucesso/erro.
+   - Trocar `COLOR_OPTIONS` para usar valores **hex** (compatíveis com o backend). Sugestão de paleta equivalente aos tokens atuais:
+     - Azul `#3498db`, Roxo `#9b59b6`, Âmbar `#f1c40f`, Vermelho `#e74c3c`, Verde `#2ecc71`, Cinza `#95a5a6`.
+   - O "dot" passa a usar `style={{ background: m.color }}` direto (já é hex).
 
-### 1. `GET /platforms`
-Lista todas as plataformas.
-**Resposta 200:**
-```json
-[
-  { "id": 1, "code": "meta",   "name": "Meta Ads",   "active": true },
-  { "id": 2, "code": "google", "name": "Google Ads", "active": true },
-  { "id": 3, "code": "tiktok", "name": "TikTok Ads", "active": false }
-]
-```
+3. **`src/pages/Leads.tsx` — ajustes mínimos**
+   - Substituir `getMoments` por `fetchMoments` no `useEffect` inicial e no `onMomentsChange`.
+   - Trocar tipos: `id` agora é `number`; ajustar comparações (`moments.find(x => String(x.id) === momentId)`).
+   - Como não há mais persistência de "momento do lead", remover do PDF e do painel de detalhes a seção "Momento do lead" **OU** manter apenas em memória (estado `leadMoments` em memória, sem `localStorage`). 
+     - **Recomendação:** manter em memória apenas durante a sessão (mais simples, mantém UI atual; some ao recarregar). Confirmar preferência abaixo.
 
-### 2. `POST /platforms`
-**Body:**
-```json
-{ "code": "tiktok", "name": "TikTok Ads", "active": true }
-```
-**Resposta 201:** `{ "id": 3 }` (ou o objeto completo)
-**Erros:** 400 se `code` duplicado → `{ "error": "code já existe" }`
+4. **Workspace**
+   - Todas as chamadas leem `getStoredWorkspaceId()` na hora da requisição (suporta troca de workspace sem reload).
 
-### 3. `PATCH /platforms/{id}`
-**Body** (campos opcionais):
-```json
-{ "name": "Meta", "code": "meta", "active": false }
-```
-**Resposta 200:** `{ "ok": true }`
+## Detalhes técnicos
 
-### 4. `DELETE /platforms/{id}`
-**Resposta 200:** `{ "ok": true }`
-**Cuidado:** se houver anúncios usando essa plataforma, retornar 409 → `{ "error": "Existem anúncios vinculados" }` (a UI vai exibir o toast).
+- Helper `tryFetch` similar ao de `src/lib/api.ts`, mas que **lança** erro (para o toast informar a falha) em vez de engolir.
+- `code` no `createMoment` derivado do label: `label.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]+/g,'_')`.
+- Estado em `StatusConfig` ganha `dirtyIds: Set<number>` para PATCH seletivo, e `originalOrder` para detectar se o reorder mudou.
+- Limpar a chave `converte_ai:moments` e `converte_ai:lead_moments` do localStorage no boot do app (one-shot) para não deixar lixo.
 
-## O que vou implementar no front
+## Pergunta antes de implementar
 
-1. **`src/lib/platforms.ts`** (novo) — espelho de `src/lib/ads.ts`:
-   - Tipo `Platform { id, code, name, active }`
-   - `fetchPlatforms()`, `getPlatforms()`, `getActivePlatforms()`, `getPlatformById(id)`
-   - `createPlatform()`, `updatePlatform()`, `deletePlatform()`
-   - Cache em memória + evento `platforms:changed` (mesmo padrão do `onAdsChange`)
-
-2. **`src/pages/PlatformsConfig.tsx`** (novo) — tela CRUD igual à de Anúncios:
-   - Form de cadastro: nome, código (slug), ativo
-   - Listagem com edição inline, switch de ativo, remover
-   - Filtro todos/ativos/inativos
-
-3. **`src/App.tsx`** — registrar rota `/config/plataformas`.
-
-4. **`src/components/AppShell.tsx`** — adicionar item "Plataformas" no menu de Configurações (ao lado de Status e Anúncios).
-
-5. **`src/lib/ads.ts`** — remover o array fixo `PLATFORMS` e:
-   - Carregar plataformas do backend ao iniciar (`fetchPlatforms()`)
-   - `platformById` / `platformByName` consultam o cache de plataformas
-   - Os anúncios continuam guardando apenas `platformId`; o nome/código vem do cache
-
-6. **`src/pages/AdsConfig.tsx`** — o `<Select>` de plataforma passa a iterar `getActivePlatforms()` (assinando `onPlatformsChange` para re-render). Loading enquanto a lista chega.
-
-## Comportamento de borda
-
-- Se a API de plataformas falhar, o dropdown fica vazio com mensagem "Cadastre uma plataforma em Configurações → Plataformas".
-- Anúncios já criados com `platformId` que não existe mais aparecem como "Plataforma removida" no badge.
-- Validação no front: `code` é normalizado para lowercase + underscore, igual ao código do anúncio.
-
-## Confirmações que preciso de você
-
-1. A tabela de plataformas é **global** ou **por workspace**?
-2. Confirma os 4 endpoints acima (`GET/POST /platforms`, `PATCH/DELETE /platforms/{id}`) ou prefere outra convenção de URL?
-
-Pode aprovar o plano e me responder essas duas perguntas em seguida — assim que estiver tudo certo, eu implemento.
+Sobre o "Momento do lead" exibido no detalhe do lead em `Leads.tsx`: como o backend novo só cobre o **catálogo** de status (não a associação lead↔status), prefere:
+- (a) manter o seletor funcionando só em memória da sessão (some ao recarregar), **ou**
+- (b) ocultar o seletor por enquanto até existir endpoint de associação?
