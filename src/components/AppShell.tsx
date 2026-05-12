@@ -9,10 +9,8 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Users },
-  { to: "/conversas", label: "Conversas", icon: MessageSquare },
-  { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
+  { to: "/relatorios", label: "Dashboards", icon: BarChart3 },
   { to: "/config/status", label: "Status do funil", icon: Tag },
   { to: "/config/anuncios", label: "Anúncios", icon: Megaphone },
   { to: "/config/plataformas", label: "Plataformas", icon: Layers },
