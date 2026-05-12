@@ -463,7 +463,7 @@ export default function Leads() {
                     setDragOver(null);
                   }}
                   className={cn(
-                    "flex flex-col rounded-xl border border-border bg-card transition-colors",
+                    "flex w-[300px] shrink-0 flex-col rounded-xl border border-border bg-card transition-colors",
                     isOver && "border-primary bg-primary/5"
                   )}
                 >
