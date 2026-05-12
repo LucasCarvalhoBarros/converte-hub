@@ -15,7 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Lead, LeadStatus, Message, STATUS_LIST, STATUS_META } from "@/lib/types";
 import { getLeads, getMessages, sendMessage, updateLeadStatus } from "@/lib/api";
 import { onWorkspaceChange } from "@/lib/workspace";
-import { getMoments, getLeadMoment, setLeadMoment, onMomentsChange, Moment } from "@/lib/moments";
+import { fetchMoments, onMomentsChange, Moment } from "@/lib/moments";
 import { getAds, fetchAds, getLeadAd, setLeadAd, onAdsChange, Ad } from "@/lib/ads";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -73,18 +73,19 @@ export default function Leads() {
   });
 
   useEffect(() => {
-    setMoments(getMoments());
+    fetchMoments().then((m) => setMoments(m)).catch(() => {});
     setAds(getAds());
     fetchAds().then((a) => setAds(a)).catch(() => {});
-    const offM = onMomentsChange(() => setMoments(getMoments()));
+    const offM = onMomentsChange(() => {
+      fetchMoments().then((m) => setMoments(m)).catch(() => {});
+    });
     const offA = onAdsChange(() => setAds(getAds()));
     return () => { offM(); offA(); };
   }, []);
 
   const updateLeadMoment = (leadId: string, momentId: string) => {
-    setLeadMoment(leadId, momentId);
     setLeadMoments((prev) => ({ ...prev, [leadId]: momentId }));
-    const m = moments.find((x) => x.id === momentId);
+    const m = moments.find((x) => String(x.id) === momentId);
     if (m) toast.success(`Momento atualizado para ${m.label}`);
   };
 
@@ -144,8 +145,8 @@ export default function Leads() {
       startY: 78,
       head: [["Nome", "Telefone", "Status", "Momento", "Origem", "Anúncio", "Última msg"]],
       body: rows.map((l) => {
-        const momentId = leadMoments[l.id] ?? getLeadMoment(l.id);
-        const moment = moments.find((m) => m.id === momentId);
+        const momentId = leadMoments[l.id];
+        const moment = moments.find((m) => String(m.id) === momentId);
         const ad = adOf(l.id);
         return [
           l.name,
@@ -824,7 +825,7 @@ export default function Leads() {
                   </div>
                 ) : (
                   <Select
-                    value={leadMoments[detail.id] ?? getLeadMoment(detail.id) ?? ""}
+                    value={leadMoments[detail.id] ?? ""}
                     onValueChange={(v) => updateLeadMoment(detail.id, v)}
                   >
                     <SelectTrigger>
@@ -832,7 +833,7 @@ export default function Leads() {
                     </SelectTrigger>
                     <SelectContent>
                       {moments.map((m) => (
-                        <SelectItem key={m.id} value={m.id}>
+                        <SelectItem key={m.id} value={String(m.id)}>
                           <div className="flex items-center gap-2">
                             <span className="h-2 w-2 rounded-full" style={{ background: m.color }} />
                             {m.label}
