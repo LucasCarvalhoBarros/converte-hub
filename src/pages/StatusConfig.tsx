@@ -161,7 +161,7 @@ export default function StatusConfig() {
         <div>
           <h1 className="font-display text-2xl font-semibold">Configurar status do funil</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Defina os <strong>momentos</strong> que um lead pode estar (ex: Fez contato, Orçamento, Comprou). Eles aparecem no detalhamento do lead.
+            Defina os <strong>status do funil</strong> que um lead pode estar (ex: Fez contato, Orçamento, Comprou). Eles aparecem no detalhamento do lead.
           </p>
         </div>
 
