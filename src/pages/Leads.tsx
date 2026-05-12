@@ -805,28 +805,6 @@ export default function Leads() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Característica do lead</label>
-                <Select value={detail.status} onValueChange={(v) => updateStatusFor(detail.id, v as LeadStatus)}>
-                  <SelectTrigger>
-                    <div className="flex items-center gap-2">
-                      <span className={cn("h-2 w-2 rounded-full", STATUS_META[detail.status].dot)} />
-                      <SelectValue />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_LIST.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        <div className="flex items-center gap-2">
-                          <span className={cn("h-2 w-2 rounded-full", STATUS_META[s].dot)} />
-                          {STATUS_META[s].label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-medium text-muted-foreground">Status do funil</label>
                   <Link to="/config/status" className="text-[10px] font-medium text-primary hover:underline">
