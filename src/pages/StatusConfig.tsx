@@ -1,57 +1,126 @@
-import { useEffect, useState } from "react";
-import { Plus, Trash2, GripVertical, Save, ArrowUp, ArrowDown } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, Trash2, GripVertical, Save, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { getMoments, saveMoments, Moment } from "@/lib/moments";
+import {
+  fetchMoments,
+  createMoment,
+  updateMoment,
+  deleteMoment,
+  reorderMoments,
+  deriveCode,
+  Moment,
+} from "@/lib/moments";
+import { onWorkspaceChange } from "@/lib/workspace";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const COLOR_OPTIONS = [
-  { label: "Azul", value: "hsl(var(--status-novo))" },
-  { label: "Roxo", value: "hsl(var(--status-atendimento))" },
-  { label: "Âmbar", value: "hsl(var(--status-interessado))" },
-  { label: "Vermelho", value: "hsl(var(--status-quente))" },
-  { label: "Verde", value: "hsl(var(--status-cliente))" },
-  { label: "Cinza", value: "hsl(var(--status-perdido))" },
+  { label: "Azul", value: "#3498db" },
+  { label: "Roxo", value: "#9b59b6" },
+  { label: "Âmbar", value: "#f1c40f" },
+  { label: "Vermelho", value: "#e74c3c" },
+  { label: "Verde", value: "#2ecc71" },
+  { label: "Cinza", value: "#95a5a6" },
 ];
 
 export default function StatusConfig() {
   const [moments, setMoments] = useState<Moment[]>([]);
+  const [original, setOriginal] = useState<Moment[]>([]);
+  const [dirtyIds, setDirtyIds] = useState<Set<number>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newColor, setNewColor] = useState(COLOR_OPTIONS[0].value);
 
-  useEffect(() => {
-    setMoments(getMoments());
-  }, []);
-
-  const persist = (next: Moment[]) => {
-    const reordered = next.map((m, i) => ({ ...m, order: i + 1 }));
-    setMoments(reordered);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const list = await fetchMoments();
+      setMoments(list);
+      setOriginal(list);
+      setDirtyIds(new Set());
+    } catch (err: any) {
+      toast.error(err?.message || "Falha ao carregar status do funil");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAdd = () => {
+  useEffect(() => {
+    load();
+    const off = onWorkspaceChange(() => load());
+    return off;
+  }, []);
+
+  const orderChanged = useMemo(() => {
+    if (moments.length !== original.length) return false;
+    return moments.some((m, i) => original[i]?.id !== m.id);
+  }, [moments, original]);
+
+  const markDirty = (id: number) =>
+    setDirtyIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+
+  const handleAdd = async () => {
     const label = newLabel.trim();
     if (!label) {
       toast.error("Informe um nome para o status");
       return;
     }
-    const id = label.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") + "_" + Date.now().toString(36);
-    persist([...moments, { id, label, color: newColor, order: moments.length + 1 }]);
-    setNewLabel("");
+    const code = deriveCode(label) || `STATUS_${Date.now()}`;
+    setCreating(true);
+    try {
+      const created = await createMoment({
+        code,
+        label,
+        color: newColor,
+        order: moments.length + 1,
+      });
+      const next = [...moments, created];
+      setMoments(next);
+      setOriginal(next);
+      setNewLabel("");
+      toast.success("Status criado");
+    } catch (err: any) {
+      toast.error(err?.message || "Falha ao criar status");
+    } finally {
+      setCreating(false);
+    }
   };
 
-  const handleRemove = (id: string) => {
-    persist(moments.filter((m) => m.id !== id));
+  const handleRemove = async (id: number) => {
+    if (!confirm("Remover este status?")) return;
+    try {
+      await deleteMoment(id);
+      const next = moments.filter((m) => m.id !== id).map((m, i) => ({ ...m, order: i + 1 }));
+      setMoments(next);
+      setOriginal(next);
+      setDirtyIds((prev) => {
+        const n = new Set(prev);
+        n.delete(id);
+        return n;
+      });
+      toast.success("Status removido");
+    } catch (err: any) {
+      toast.error(err?.message || "Falha ao remover status");
+    }
   };
 
-  const handleRename = (id: string, label: string) => {
-    persist(moments.map((m) => (m.id === id ? { ...m, label } : m)));
+  const handleRename = (id: number, label: string) => {
+    setMoments((prev) => prev.map((m) => (m.id === id ? { ...m, label } : m)));
+    markDirty(id);
   };
 
-  const handleColor = (id: string, color: string) => {
-    persist(moments.map((m) => (m.id === id ? { ...m, color } : m)));
+  const handleColor = (id: number, color: string) => {
+    setMoments((prev) => prev.map((m) => (m.id === id ? { ...m, color } : m)));
+    markDirty(id);
   };
 
   const move = (idx: number, dir: -1 | 1) => {
@@ -59,13 +128,32 @@ export default function StatusConfig() {
     const target = idx + dir;
     if (target < 0 || target >= next.length) return;
     [next[idx], next[target]] = [next[target], next[idx]];
-    persist(next);
+    setMoments(next.map((m, i) => ({ ...m, order: i + 1 })));
   };
 
-  const handleSave = () => {
-    saveMoments(moments);
-    toast.success("Status do funil salvos com sucesso");
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const patches = moments
+        .filter((m) => dirtyIds.has(m.id))
+        .map((m) => updateMoment(m.id, { label: m.label, color: m.color }));
+      if (patches.length) await Promise.all(patches);
+
+      if (orderChanged) {
+        await reorderMoments(moments.map((m, i) => ({ id: m.id, order: i + 1 })));
+      }
+
+      setOriginal(moments);
+      setDirtyIds(new Set());
+      toast.success("Alterações salvas");
+    } catch (err: any) {
+      toast.error(err?.message || "Falha ao salvar alterações");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const hasChanges = dirtyIds.size > 0 || orderChanged;
 
   return (
     <AppShell>
@@ -86,31 +174,48 @@ export default function StatusConfig() {
               placeholder="Nome do status (ex: Negociação)"
               maxLength={40}
               className="flex-1"
+              disabled={creating}
             />
             <select
               value={newColor}
               onChange={(e) => setNewColor(e.target.value)}
               className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              disabled={creating}
             >
               {COLOR_OPTIONS.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </select>
-            <Button onClick={handleAdd} className="gap-2">
-              <Plus className="h-4 w-4" /> Adicionar
+            <Button onClick={handleAdd} className="gap-2" disabled={creating}>
+              {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              Adicionar
             </Button>
           </div>
         </Card>
 
         <Card className="p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-sm font-semibold">Status cadastrados ({moments.length})</h2>
-            <Button onClick={handleSave} size="sm" className="bg-gradient-primary hover:opacity-95 shadow-glow gap-2">
-              <Save className="h-4 w-4" /> Salvar alterações
+            <h2 className="font-display text-sm font-semibold">
+              Status cadastrados ({moments.length})
+            </h2>
+            <Button
+              onClick={handleSave}
+              size="sm"
+              className="bg-gradient-primary hover:opacity-95 shadow-glow gap-2"
+              disabled={!hasChanges || saving}
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Salvar alterações
             </Button>
           </div>
 
-          {moments.length === 0 && (
+          {loading && (
+            <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              Carregando...
+            </div>
+          )}
+
+          {!loading && moments.length === 0 && (
             <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
               Nenhum status cadastrado.
             </div>
@@ -141,6 +246,9 @@ export default function StatusConfig() {
                   {COLOR_OPTIONS.map((c) => (
                     <option key={c.value} value={c.value}>{c.label}</option>
                   ))}
+                  {!COLOR_OPTIONS.some((c) => c.value === m.color) && (
+                    <option value={m.color}>Customizado</option>
+                  )}
                 </select>
                 <div className="flex items-center">
                   <button
