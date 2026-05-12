@@ -93,7 +93,7 @@ export async function updateLeadFunnelStatus(leadId: string, funnelStatusId: str
 
 export async function updateLeadAd(leadId: string, adId: string | null): Promise<Lead | null> {
   const ws = wsParam();
-  const data = await tryFetch<any>(`/conversas/leads/${leadId}?workspace=${ws}`, {
+  const data = await tryFetch<any>(`/conversas/leads/${leadId}/ad?workspace=${ws}`, {
     method: "PATCH",
     body: JSON.stringify({ adId: adId != null ? Number(adId) : null }),
   });
