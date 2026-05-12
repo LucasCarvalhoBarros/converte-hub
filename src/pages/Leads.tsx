@@ -421,7 +421,13 @@ export default function Leads() {
 
       {view === "kanban" ? (
         <div className="h-[calc(100%-57px)] overflow-x-auto bg-muted/20 p-4 lg:p-6">
-          <div className="grid h-full grid-cols-1 md:grid-cols-3 gap-4 min-w-[720px]">
+          <div className={cn(
+            "flex h-full gap-4",
+            moments.length === 0 && "items-stretch"
+          )}>
+            {moments.length > 0 && (
+              <style>{`.kanban-col { flex: 0 0 280px; }`}</style>
+            )}
             {moments.length === 0 ? (
               <div className="col-span-full flex h-full items-center justify-center">
                 <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center max-w-md">
