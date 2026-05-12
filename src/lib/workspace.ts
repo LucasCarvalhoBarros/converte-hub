@@ -8,10 +8,7 @@ export interface Workspace {
 }
 
 export const WORKSPACES: Workspace[] = [
-  { id: "ws-1", name: "Converte-ai • Matriz", phone: "+55 11 4002-8922", avatarColor: "from-primary to-primary-glow" },
-  { id: "ws-2", name: "Clínica Vida+", phone: "+55 11 99876-5432", avatarColor: "from-status-cliente to-success" },
-  { id: "ws-3", name: "Imobiliária Prime", phone: "+55 21 98765-1234", avatarColor: "from-status-quente to-status-interessado" },
-  { id: "ws-4", name: "Auto Center Turbo", phone: "+55 31 99654-3210", avatarColor: "from-info to-status-novo" },
+  { id: "1", name: "NUMERO TESTE", phone: "019983592739", avatarColor: "from-primary to-primary-glow" },
 ];
 
 const STORAGE_KEY = "converte-ai:workspace";
