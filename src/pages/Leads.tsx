@@ -143,7 +143,7 @@ export default function Leads() {
       startY: 78,
       head: [["Nome", "Telefone", "Característica", "Status do funil", "Origem", "Anúncio", "Última msg"]],
       body: rows.map((l) => {
-        const momentId = leadMoments[l.id];
+        const momentId = leadMoments[l.id] ?? l.funnelStatusId ?? null;
         const moment = moments.find((m) => String(m.id) === momentId);
         const ad = adOf(l.id);
         return [
