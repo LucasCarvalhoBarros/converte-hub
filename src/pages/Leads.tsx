@@ -827,7 +827,7 @@ export default function Leads() {
                   </div>
                 ) : (
                   <Select
-                    value={leadMoments[detail.id] ?? ""}
+                    value={leadMoments[detail.id] ?? detail.funnelStatusId ?? ""}
                     onValueChange={(v) => updateLeadMoment(detail.id, v)}
                   >
                     <SelectTrigger>
