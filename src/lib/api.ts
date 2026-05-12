@@ -84,7 +84,7 @@ export async function updateLeadStatus(leadId: string, status: LeadStatus): Prom
 
 export async function updateLeadFunnelStatus(leadId: string, funnelStatusId: string | null): Promise<Lead | null> {
   const ws = wsParam();
-  const data = await tryFetch<any>(`/conversas/leads/${leadId}?workspace=${ws}`, {
+  const data = await tryFetch<any>(`/conversas/leads/${leadId}/funnel-status?workspace=${ws}`, {
     method: "PATCH",
     body: JSON.stringify({ funnelStatusId: funnelStatusId != null ? Number(funnelStatusId) : null }),
   });
