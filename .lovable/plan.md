@@ -1,35 +1,38 @@
-## Renomeação de rótulos no app
+# Conectar app à API de Workspaces
 
-Apenas mudanças de UI/textos — sem alterar lógica, endpoints ou nomes de campos no backend.
+A tela `Clientes` (`/config/clientes`) já consome `GET/POST/PATCH/DELETE /workspaces` via `src/lib/clients.ts`. Falta plugar o restante do app, que ainda usa a lista fixa em `src/lib/workspace.ts`.
 
-### Mapeamento
+## Mudanças
 
-- "Momento do lead" / "Momento" → **Status do funil**
-- "Status" (a característica fixa: novo lead, em atendimento, interessado, quente, cliente, perdido) → **Característica do lead**
+### 1. `src/lib/workspace.ts`
+- Remover o array fixo `WORKSPACES`.
+- Reaproveitar o cache de `src/lib/clients.ts` (`fetchClients`, `getClients`, `onClientsChange`) como fonte única.
+- Manter as funções `getStoredWorkspaceId` / `setStoredWorkspaceId` / `onWorkspaceChange` (id continua em `localStorage`, agora como `string` numérico).
+- Expor helpers derivados: `getCurrentWorkspace()` e `listWorkspaces()` que mapeiam `Client` → `Workspace` (id, name, phone, avatarColor gerado por hash do id para manter visual consistente).
+- Se ainda não houver cliente carregado, disparar `ensureClientsLoaded()`.
 
-A rota `/config/status` continua sendo a tela de configuração do **Status do funil** (já é).
+### 2. `src/components/WorkspaceSwitcher.tsx`
+- Trocar import de `WORKSPACES` por estado local alimentado por `ensureClientsLoaded()` + `onClientsChange()`.
+- Mostrar estado de loading (skeleton no botão) enquanto carrega.
+- Se a lista vier vazia, mostrar CTA "Cadastrar cliente" linkando para `/config/clientes`.
+- Ao trocar, validar se o id atual ainda existe; se não, cair no primeiro disponível.
+- Filtrar somente clientes `active === true` na lista do popover.
 
-### Alterações por arquivo
+### 3. `src/lib/api.ts`
+- Trocar `wsParam()` (hoje hardcoded em `"1"`) por `getStoredWorkspaceId()` para que todas as chamadas (`/conversas/leads...`) usem o workspace selecionado.
+- Adicionar listener: ao trocar workspace (`onWorkspaceChange`), invalidar caches que dependam do workspace (se houver). Caso contrário, basta a próxima request usar o novo id.
 
-**`src/pages/Leads.tsx`**
-- Linha 79: toast `Momento atualizado…` → `Status do funil atualizado para {label}`
-- Linha 136 (export PDF): cabeçalho `["Nome","Telefone","Status","Momento",…]` → `["Nome","Telefone","Característica","Status do funil",…]`
-- Linha 234 e 240 (toasts de status fixo): `Status atualizado…` → `Característica atualizada para {label}`
-- Linha 808: label `Status` no painel de detalhes → `Característica do lead`
-- Linha 831: label `Momento do lead` → `Status do funil`
-- Filtros / chips na linha ~554 que mostram "Todos / Novo lead / …": manter labels dos status, mas o título/legenda do filtro (se houver "Status") passa a ser "Característica".
-- Comentário linha 24: já diz "Status do funil" — manter.
+### 4. Inicialização (`src/App.tsx` ou `AppShell`)
+- Chamar `ensureClientsLoaded()` no boot para popular o switcher antes do primeiro render do header.
 
-**`src/pages/StatusConfig.tsx`**
-- Texto auxiliar linha 164: substituir "momentos" por "status do funil" para ficar coerente.
-- Restante já usa "status do funil".
+## Detalhes técnicos
 
-**`src/components/AppShell.tsx`**
-- Item de menu "Status do funil" já está correto — manter.
+- `Workspace.id` passa a ser `string(Number)` para compatibilidade com chamadas existentes.
+- `avatarColor` derivado: paleta fixa `["from-primary to-primary-glow", "from-status-cliente to-success", "from-status-qualificado to-primary", ...]` indexada por `id % paleta.length`.
+- Sem mudanças de UI fora do switcher; o popover mantém o visual atual.
+- Sem mudanças de schema ou backend — apenas consumo do endpoint já publicado.
 
-**`src/lib/types.ts`**
-- Sem mudança nos identificadores (`LeadStatus`, `STATUS_META`). Apenas comentário opcional indicando que esse enum representa a "Característica do lead".
+## Fora de escopo
 
-### Fora de escopo
-- Renomear tipos/variáveis no código (`LeadStatus`, `moments`, `updateLeadStatus`) — manter para não quebrar nada.
-- Endpoints e payloads do backend.
+- Multi-tenant real (RBAC, permissões por workspace) — continua client-side.
+- Refresh automático periódico da lista de workspaces.
