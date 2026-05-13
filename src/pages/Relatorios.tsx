@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
+  
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -12,12 +12,16 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Calendar, Download, Filter, Link2, LinkIcon, Unlink, TrendingUp, DollarSign, ShoppingCart, Percent } from "lucide-react";
+import { Calendar, Download, Filter, LinkIcon, Unlink, TrendingUp, DollarSign, ShoppingCart, Percent, Megaphone } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { getLeads } from "@/lib/api";
+import { fetchAds, getAds, onAdsChange } from "@/lib/ads";
+import { onWorkspaceChange } from "@/lib/workspace";
+import type { Lead } from "@/lib/types";
 
 // ---------- Mock data ----------
 const ORIGIN_COLORS = {
@@ -91,6 +95,42 @@ const conversao = (totalVendas / totalConversas) * 100;
 // ---------- Component ----------
 export default function Relatorios() {
   const [origem, setOrigem] = useState("todas");
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [ads, setAds] = useState(getAds());
+
+  useEffect(() => {
+    const load = () => {
+      getLeads().then(setLeads).catch(() => setLeads([]));
+      fetchAds().catch(() => {});
+    };
+    load();
+    const offWs = onWorkspaceChange(load);
+    const offAds = onAdsChange(() => setAds(getAds()));
+    return () => { offWs(); offAds(); };
+  }, []);
+
+  const adChartData = useMemo(() => {
+    const counts = new Map<string, number>();
+    let semAnuncio = 0;
+    for (const l of leads) {
+      if (!l.adId) { semAnuncio++; continue; }
+      counts.set(l.adId, (counts.get(l.adId) ?? 0) + 1);
+    }
+    const rows = Array.from(counts.entries()).map(([adId, qty]) => {
+      const ad = ads.find((a) => a.id === adId);
+      return {
+        name: ad?.name ?? `Anúncio #${adId}`,
+        platform: ad?.platform ?? "—",
+        qty,
+      };
+    });
+    rows.sort((a, b) => b.qty - a.qty);
+    if (semAnuncio > 0) rows.push({ name: "Sem anúncio", platform: "—", qty: semAnuncio });
+    return rows;
+  }, [leads, ads]);
+
+  const totalLeadsAds = adChartData.reduce((s, r) => s + r.qty, 0);
+  const adsAtivos = adChartData.filter((r) => r.name !== "Sem anúncio").length;
 
   const originSummary = useMemo(
     () => [
@@ -211,48 +251,85 @@ export default function Relatorios() {
             </div>
           </Card>
 
-          {/* Origem das conversas */}
+          {/* Leads por Anúncio */}
           <Card className="p-6 shadow-soft lg:col-span-2">
             <div className="flex items-start justify-between mb-1">
               <div>
-                <h3 className="font-display text-lg font-semibold">Origem das Conversas</h3>
-                <p className="text-xs text-muted-foreground">Distribuição diária por canal de aquisição</p>
+                <h3 className="font-display text-lg font-semibold">Leads por Anúncio</h3>
+                <p className="text-xs text-muted-foreground">Quantos leads vieram de cada anúncio de origem</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-5">
-              {originSummary.map((o) => (
-                <div key={o.key} className="rounded-lg border border-border/60 p-3">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="h-2 w-2 rounded-full" style={{ background: o.color }} />
-                    {o.label}
-                  </div>
-                  <div className="font-display text-2xl font-bold mt-1">{o.value}</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 my-5">
+              <div className="rounded-lg border border-border/60 p-3 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-info/15 text-info">
+                  <Megaphone className="h-4 w-4" />
                 </div>
-              ))}
+                <div>
+                  <div className="text-xs text-muted-foreground">Anúncios com leads</div>
+                  <div className="font-display text-xl font-bold">{adsAtivos}</div>
+                </div>
+              </div>
+              <div className="rounded-lg border border-border/60 p-3 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/15 text-success">
+                  <TrendingUp className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Total de leads</div>
+                  <div className="font-display text-xl font-bold">{totalLeadsAds}</div>
+                </div>
+              </div>
+              <div className="rounded-lg border border-border/60 p-3 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-warning/15 text-warning">
+                  <Unlink className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Sem anúncio</div>
+                  <div className="font-display text-xl font-bold">
+                    {adChartData.find((r) => r.name === "Sem anúncio")?.qty ?? 0}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dailyOrigin} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip
-                    contentStyle={{
-                      background: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" />
-                  <Bar dataKey="meta" stackId="a" name="Meta Ads" fill={ORIGIN_COLORS.meta} radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="google" stackId="a" name="Google Ads" fill={ORIGIN_COLORS.google} />
-                  <Bar dataKey="outras" stackId="a" name="Outras Origens" fill={ORIGIN_COLORS.outras} />
-                  <Bar dataKey="nao" stackId="a" name="Não rastreada" fill={ORIGIN_COLORS.nao} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="h-[320px]">
+              {adChartData.length === 0 ? (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  Nenhum lead encontrado no período.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={adChartData}
+                    layout="vertical"
+                    margin={{ top: 8, right: 24, left: 8, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                      width={140}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                      formatter={(value: number) => [`${value} leads`, "Quantidade"]}
+                      labelFormatter={(label, payload) => {
+                        const p = payload?.[0]?.payload as { platform?: string } | undefined;
+                        return p?.platform ? `${label} • ${p.platform}` : String(label);
+                      }}
+                    />
+                    <Bar dataKey="qty" name="Leads" fill="hsl(217 90% 58%)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </Card>
         </div>
