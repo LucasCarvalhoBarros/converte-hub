@@ -353,31 +353,39 @@ export default function Relatorios() {
           {/* Funil */}
           <Card className="p-6 shadow-soft lg:col-span-1">
             <h3 className="font-display text-lg font-semibold mb-1">Funil da Jornada de Compra</h3>
-            <p className="text-xs text-muted-foreground mb-6">Conversão entre etapas no período</p>
+            <p className="text-xs text-muted-foreground mb-6">Distribuição dos leads pelos status do funil cadastrados</p>
 
-            <div className="space-y-4">
-              {funnel.map((f, i) => {
-                const widths = [100, 75, 50];
-                const colors = ["hsl(217 90% 80%)", "hsl(217 90% 65%)", "hsl(217 90% 50%)"];
-                return (
-                  <div key={f.stage} className="flex flex-col items-center">
-                    <div
-                      className="rounded-lg py-3 text-center transition-all"
-                      style={{ width: `${widths[i]}%`, background: colors[i] }}
-                    >
-                      <div className="text-xs font-medium text-white/95">{f.stage}</div>
-                      <div className="text-sm font-bold text-white">
-                        {f.pct.toLocaleString("pt-BR")}% ({f.value.toLocaleString("pt-BR")})
+            {funnelData.length === 0 ? (
+              <div className="rounded-lg bg-muted/40 p-6 text-center text-sm text-muted-foreground">
+                Nenhum status do funil cadastrado.
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  {funnelData.map((f, i) => {
+                    const maxPct = Math.max(...funnelData.map((x) => x.pct), 1);
+                    const width = Math.max((f.pct / maxPct) * 100, 18);
+                    return (
+                      <div key={f.id} className="flex flex-col items-center">
+                        <div
+                          className="rounded-lg py-3 px-3 text-center transition-all"
+                          style={{ width: `${width}%`, background: f.color }}
+                        >
+                          <div className="text-xs font-medium text-white/95 truncate">{f.label}</div>
+                          <div className="text-sm font-bold text-white">
+                            {f.pct.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% ({f.value.toLocaleString("pt-BR")})
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
 
-            <div className="mt-6 rounded-lg bg-muted/40 p-4 text-xs text-muted-foreground">
-              <strong className="text-foreground">Insight:</strong> {((27 / funnel[1].value) * 100).toFixed(1)}% das cotações se converteram em compra.
-            </div>
+                <div className="mt-6 rounded-lg bg-muted/40 p-4 text-xs text-muted-foreground">
+                  <strong className="text-foreground">Total:</strong> {leads.length.toLocaleString("pt-BR")} leads distribuídos em {funnelData.length} status.
+                </div>
+              </>
+            )}
           </Card>
 
           {/* Vendas */}
