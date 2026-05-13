@@ -22,6 +22,7 @@ import { getLeads } from "@/lib/api";
 import { fetchAds, getAds, onAdsChange } from "@/lib/ads";
 import { onWorkspaceChange } from "@/lib/workspace";
 import type { Lead } from "@/lib/types";
+import { fetchMoments, onMomentsChange, type Moment } from "@/lib/moments";
 
 // ---------- Mock data ----------
 const ORIGIN_COLORS = {
