@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -12,12 +12,16 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Calendar, Download, Filter, Link2, LinkIcon, Unlink, TrendingUp, DollarSign, ShoppingCart, Percent } from "lucide-react";
+import { Calendar, Download, Filter, LinkIcon, Unlink, TrendingUp, DollarSign, ShoppingCart, Percent, Megaphone } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { getLeads } from "@/lib/api";
+import { fetchAds, getAds, onAdsChange } from "@/lib/ads";
+import { onWorkspaceChange } from "@/lib/workspace";
+import type { Lead } from "@/lib/types";
 
 // ---------- Mock data ----------
 const ORIGIN_COLORS = {
