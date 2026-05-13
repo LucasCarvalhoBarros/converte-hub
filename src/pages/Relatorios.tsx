@@ -95,6 +95,42 @@ const conversao = (totalVendas / totalConversas) * 100;
 // ---------- Component ----------
 export default function Relatorios() {
   const [origem, setOrigem] = useState("todas");
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [ads, setAds] = useState(getAds());
+
+  useEffect(() => {
+    const load = () => {
+      getLeads().then(setLeads).catch(() => setLeads([]));
+      fetchAds().catch(() => {});
+    };
+    load();
+    const offWs = onWorkspaceChange(load);
+    const offAds = onAdsChange(() => setAds(getAds()));
+    return () => { offWs(); offAds(); };
+  }, []);
+
+  const adChartData = useMemo(() => {
+    const counts = new Map<string, number>();
+    let semAnuncio = 0;
+    for (const l of leads) {
+      if (!l.adId) { semAnuncio++; continue; }
+      counts.set(l.adId, (counts.get(l.adId) ?? 0) + 1);
+    }
+    const rows = Array.from(counts.entries()).map(([adId, qty]) => {
+      const ad = ads.find((a) => a.id === adId);
+      return {
+        name: ad?.name ?? `Anúncio #${adId}`,
+        platform: ad?.platform ?? "—",
+        qty,
+      };
+    });
+    rows.sort((a, b) => b.qty - a.qty);
+    if (semAnuncio > 0) rows.push({ name: "Sem anúncio", platform: "—", qty: semAnuncio });
+    return rows;
+  }, [leads, ads]);
+
+  const totalLeadsAds = adChartData.reduce((s, r) => s + r.qty, 0);
+  const adsAtivos = adChartData.filter((r) => r.name !== "Sem anúncio").length;
 
   const originSummary = useMemo(
     () => [
