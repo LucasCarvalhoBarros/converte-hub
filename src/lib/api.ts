@@ -5,9 +5,10 @@ const API_URL =
   import.meta.env.VITE_API_URL ||
   "https://05m7xwli09.execute-api.us-east-1.amazonaws.com/prod";
 
-// Workspace fixo em 1 por enquanto
+import { getStoredWorkspaceId } from "./workspace";
+
 function wsParam(): string {
-  return "1";
+  return getStoredWorkspaceId() || "1";
 }
 
 // ---------- Normalization ----------
