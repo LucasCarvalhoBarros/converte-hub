@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import { Client, getClients, ensureClientsLoaded, onClientsChange } from "./clients";
 
 export interface Workspace {
   id: string;
@@ -7,22 +8,52 @@ export interface Workspace {
   avatarColor: string;
 }
 
-export const WORKSPACES: Workspace[] = [
-  { id: "1", name: "NUMERO TESTE", phone: "019983592739", avatarColor: "from-primary to-primary-glow" },
-  { id: "2", name: "NUMERO TESTE 2", phone: "019983592740", avatarColor: "from-status-cliente to-success" },
+const PALETTE = [
+  "from-primary to-primary-glow",
+  "from-status-cliente to-success",
+  "from-status-qualificado to-primary",
+  "from-status-perdido to-destructive",
+  "from-status-novo to-primary-glow",
 ];
+
+function colorFor(id: number): string {
+  const i = Math.abs(id) % PALETTE.length;
+  return PALETTE[i];
+}
+
+export function clientToWorkspace(c: Client): Workspace {
+  return {
+    id: String(c.id),
+    name: c.name || "Sem nome",
+    phone: c.phone || "",
+    avatarColor: colorFor(c.id),
+  };
+}
+
+export function listWorkspaces(): Workspace[] {
+  return getClients().filter((c) => c.active).map(clientToWorkspace);
+}
 
 const STORAGE_KEY = "converte-ai:workspace";
 const EVENT = "workspace:changed";
 
 export function getStoredWorkspaceId(): string {
-  if (typeof window === "undefined") return WORKSPACES[0].id;
-  return localStorage.getItem(STORAGE_KEY) || WORKSPACES[0].id;
+  if (typeof window === "undefined") return "";
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) return stored;
+  const first = listWorkspaces()[0];
+  return first?.id ?? "";
 }
 
 export function setStoredWorkspaceId(id: string) {
   localStorage.setItem(STORAGE_KEY, id);
   window.dispatchEvent(new CustomEvent(EVENT, { detail: id }));
+}
+
+export function getCurrentWorkspace(): Workspace | null {
+  const id = getStoredWorkspaceId();
+  const list = listWorkspaces();
+  return list.find((w) => w.id === id) ?? list[0] ?? null;
 }
 
 export function onWorkspaceChange(cb: (id: string) => void) {
@@ -31,5 +62,14 @@ export function onWorkspaceChange(cb: (id: string) => void) {
   return () => window.removeEventListener(EVENT, handler);
 }
 
-export const WorkspaceContext = createContext<Workspace>(WORKSPACES[0]);
+// Re-export for convenience
+export { ensureClientsLoaded, onClientsChange };
+
+// Kick off loading once on import (browser only)
+if (typeof window !== "undefined") {
+  ensureClientsLoaded().catch(() => {});
+}
+
+// Legacy context (kept for compatibility — defaults to null)
+export const WorkspaceContext = createContext<Workspace | null>(null);
 export const useWorkspace = () => useContext(WorkspaceContext);
