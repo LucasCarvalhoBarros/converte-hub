@@ -97,17 +97,30 @@ export default function Relatorios() {
   const [origem, setOrigem] = useState("todas");
   const [leads, setLeads] = useState<Lead[]>([]);
   const [ads, setAds] = useState(getAds());
+  const [moments, setMoments] = useState<Moment[]>([]);
 
   useEffect(() => {
     const load = () => {
       getLeads().then(setLeads).catch(() => setLeads([]));
       fetchAds().catch(() => {});
+      fetchMoments().then(setMoments).catch(() => setMoments([]));
     };
     load();
     const offWs = onWorkspaceChange(load);
     const offAds = onAdsChange(() => setAds(getAds()));
-    return () => { offWs(); offAds(); };
+    const offMoments = onMomentsChange(() => fetchMoments().then(setMoments).catch(() => {}));
+    return () => { offWs(); offAds(); offMoments(); };
   }, []);
+
+  const funnelData = useMemo(() => {
+    const total = leads.length;
+    const ordered = [...moments].sort((a, b) => a.order - b.order);
+    return ordered.map((m) => {
+      const count = leads.filter((l) => String(l.funnelStatusId) === String(m.id)).length;
+      const pct = total > 0 ? (count / total) * 100 : 0;
+      return { id: m.id, label: m.label, color: m.color, value: count, pct };
+    });
+  }, [leads, moments]);
 
   const adChartData = useMemo(() => {
     const counts = new Map<string, number>();
