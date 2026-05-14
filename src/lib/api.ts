@@ -24,6 +24,8 @@ function normalizeLead(raw: any): Lead {
     unread: typeof raw.unread === "number" ? raw.unread : undefined,
     adId: raw.adId != null ? String(raw.adId) : null,
     funnelStatusId: raw.funnelStatusId != null ? String(raw.funnelStatusId) : null,
+    totalSales: typeof raw.totalSales === "number" ? raw.totalSales : undefined,
+    totalRevenue: typeof raw.totalRevenue === "number" ? raw.totalRevenue : undefined,
   };
 }
 
