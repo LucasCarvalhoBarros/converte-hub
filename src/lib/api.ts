@@ -101,6 +101,38 @@ export async function updateLeadAd(leadId: string, adId: string | null): Promise
   return data ? normalizeLead(data) : null;
 }
 
+// ---------- Relatórios ----------
+export interface OriginsReport {
+  total: number;
+  tracked: number;
+  untracked: number;
+  byOrigin: { origin: string; count: number }[];
+  daily: { date: string; metaAds: number; googleAds: number; other: number; untracked: number }[];
+}
+
+export interface SalesReport {
+  totalSales: number;
+  totalRevenue: number;
+  conversionRate: number;
+  daily: { date: string; quantity: number; revenue: number }[];
+}
+
+export async function getOriginsReport(startDate?: string, endDate?: string): Promise<OriginsReport | null> {
+  const ws = wsParam();
+  const qs = new URLSearchParams({ workspace: ws });
+  if (startDate) qs.set("startDate", startDate);
+  if (endDate) qs.set("endDate", endDate);
+  return await tryFetch<OriginsReport>(`/relatorios/origins?${qs.toString()}`);
+}
+
+export async function getSalesReport(startDate?: string, endDate?: string): Promise<SalesReport | null> {
+  const ws = wsParam();
+  const qs = new URLSearchParams({ workspace: ws });
+  if (startDate) qs.set("startDate", startDate);
+  if (endDate) qs.set("endDate", endDate);
+  return await tryFetch<SalesReport>(`/relatorios/sales?${qs.toString()}`);
+}
+
 // POST /conversas/leads/{id}/messages sends an agent message to the lead
 export async function sendMessage(leadId: string, text: string): Promise<Message> {
   const ws = wsParam();
