@@ -60,10 +60,12 @@ export const auth = {
     });
 
     if (!result.isSignedIn) {
+      const step = result.nextStep?.signInStep;
+      if (step === "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED") {
+        throw new NewPasswordRequiredError(email);
+      }
       throw new Error(
-        result.nextStep?.signInStep
-          ? `Etapa adicional necessária: ${result.nextStep.signInStep}`
-          : "Não foi possível concluir o login."
+        step ? `Etapa adicional necessária: ${step}` : "Não foi possível concluir o login."
       );
     }
 
