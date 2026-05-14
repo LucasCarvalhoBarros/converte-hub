@@ -133,6 +133,29 @@ export async function getSalesReport(startDate?: string, endDate?: string): Prom
   return await tryFetch<SalesReport>(`/relatorios/sales?${qs.toString()}`);
 }
 
+export interface CreateSaleInput {
+  workspaceId: number;
+  leadId: number;
+  amount: number;
+  soldAt: string; // ISO without timezone, e.g. "2026-05-14T10:30:00"
+}
+
+export async function createSale(input: CreateSaleInput): Promise<{ ok: boolean; data: any | null }> {
+  try {
+    const res = await fetch(`${API_URL}/relatorios/sales`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json().catch(() => null);
+    return { ok: true, data };
+  } catch (err) {
+    console.warn("[api] createSale failed:", err);
+    return { ok: false, data: null };
+  }
+}
+
 // POST /conversas/leads/{id}/messages sends an agent message to the lead
 export async function sendMessage(leadId: string, text: string): Promise<Message> {
   const ws = wsParam();
