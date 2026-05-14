@@ -14,6 +14,9 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [newPasswordRequired, setNewPasswordRequired] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
   if (auth.get()) return <Navigate to="/" replace />;
 
@@ -29,6 +32,12 @@ export default function Login() {
       toast.success("Bem-vindo ao Converte-ai 🚀");
       navigate("/", { replace: true });
     } catch (err: any) {
+      if (err instanceof NewPasswordRequiredError) {
+        setNewPasswordRequired(true);
+        toast.info("Defina uma nova senha para concluir o acesso.");
+        setLoading(false);
+        return;
+      }
       const code = err?.name || "";
       const msg =
         code === "NotAuthorizedException"
@@ -45,6 +54,34 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  const submitNewPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 8) {
+      toast.error("A nova senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast.error("As senhas não conferem.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await auth.completeNewPassword(newPassword, email.trim());
+      toast.success("Senha atualizada! Bem-vindo 🚀");
+      navigate("/", { replace: true });
+    } catch (err: any) {
+      const code = err?.name || "";
+      const msg =
+        code === "InvalidPasswordException"
+          ? "Senha não atende aos requisitos de segurança."
+          : err?.message || "Não foi possível atualizar a senha.";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
