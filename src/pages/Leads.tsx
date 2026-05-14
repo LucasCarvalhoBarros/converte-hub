@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar as CalendarIcon, X, Download, Megaphone, RefreshCw } from "lucide-react";
+import { Phone, Search, Send, Paperclip, Smile, MoreVertical, ArrowLeft, CheckCheck, List, Columns3, MessageCircle, Eye, Calendar as CalendarIcon, X, Download, Megaphone, RefreshCw, DollarSign } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
@@ -13,8 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Lead, LeadStatus, Message, STATUS_LIST, STATUS_META } from "@/lib/types";
-import { getLeads, getMessages, sendMessage, updateLeadStatus, updateLeadFunnelStatus, updateLeadAd as apiUpdateLeadAd } from "@/lib/api";
-import { onWorkspaceChange } from "@/lib/workspace";
+import { getLeads, getMessages, sendMessage, updateLeadStatus, updateLeadFunnelStatus, updateLeadAd as apiUpdateLeadAd, createSale } from "@/lib/api";
+import { onWorkspaceChange, listWorkspaces, getStoredWorkspaceId } from "@/lib/workspace";
 import { fetchMoments, onMomentsChange, Moment } from "@/lib/moments";
 import { getAds, fetchAds, onAdsChange, Ad } from "@/lib/ads";
 import { cn } from "@/lib/utils";
@@ -61,6 +62,60 @@ export default function Leads() {
     from.setHours(0, 0, 0, 0);
     return { from, to };
   });
+
+  // Sale dialog state
+  const [saleLeadId, setSaleLeadId] = useState<string | null>(null);
+  const [saleWorkspaceId, setSaleWorkspaceId] = useState<string>("");
+  const [saleAmount, setSaleAmount] = useState<string>("");
+  const [saleDate, setSaleDate] = useState<string>("");
+  const [savingSale, setSavingSale] = useState(false);
+  const workspaces = useMemo(() => listWorkspaces(), [leads]);
+
+  const openSaleDialog = (leadId: string) => {
+    setSaleLeadId(leadId);
+    setSaleWorkspaceId(getStoredWorkspaceId() || (workspaces[0]?.id ?? ""));
+    setSaleAmount("");
+    // Default to "now" in local format YYYY-MM-DDTHH:mm
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const local = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    setSaleDate(local);
+  };
+
+  const submitSale = async () => {
+    if (!saleLeadId) return;
+    const wsId = Number(saleWorkspaceId);
+    const leadIdNum = Number(saleLeadId);
+    const amountNum = Number(String(saleAmount).replace(",", "."));
+    if (!wsId || !leadIdNum) {
+      toast.error("Workspace e lead são obrigatórios");
+      return;
+    }
+    if (!amountNum || amountNum <= 0) {
+      toast.error("Informe um valor válido");
+      return;
+    }
+    if (!saleDate) {
+      toast.error("Informe a data da venda");
+      return;
+    }
+    // saleDate is "YYYY-MM-DDTHH:mm" — append seconds to match expected format
+    const soldAt = saleDate.length === 16 ? `${saleDate}:00` : saleDate;
+    setSavingSale(true);
+    const res = await createSale({
+      workspaceId: wsId,
+      leadId: leadIdNum,
+      amount: amountNum,
+      soldAt,
+    });
+    setSavingSale(false);
+    if (res.ok) {
+      toast.success("Venda registrada com sucesso");
+      setSaleLeadId(null);
+    } else {
+      toast.error("Falha ao registrar a venda");
+    }
+  };
 
   useEffect(() => {
     fetchMoments().then((m) => setMoments(m)).catch(() => {});
@@ -534,6 +589,17 @@ export default function Leads() {
                               <Megaphone className="h-2.5 w-2.5" /> {adOf(l.id)!.name}
                             </div>
                           )}
+                          <div className="mt-2 flex">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="h-7 w-full gap-1.5 text-[11px] border-success/40 text-success hover:bg-success/10 hover:text-success"
+                              onClick={(e) => { e.stopPropagation(); openSaleDialog(l.id); }}
+                            >
+                              <DollarSign className="h-3 w-3" /> Registrar venda
+                            </Button>
+                          </div>
                         </div>
                       );
                     })}
@@ -847,7 +913,14 @@ export default function Leads() {
                 )}
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-2 border-success/40 text-success hover:bg-success/10 hover:text-success"
+                  onClick={() => { openSaleDialog(detail.id); setDetailId(null); }}
+                >
+                  <DollarSign className="h-4 w-4" /> Registrar venda
+                </Button>
                 <Button
                   variant="outline"
                   className="flex-1 gap-2"
@@ -861,6 +934,93 @@ export default function Leads() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Sale dialog */}
+      <Dialog open={!!saleLeadId} onOpenChange={(o) => !o && setSaleLeadId(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-success" /> Registrar venda
+            </DialogTitle>
+            <DialogDescription>
+              Preencha as informações da venda relacionada a este lead.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="sale-workspace">Workspace</Label>
+              <Select value={saleWorkspaceId} onValueChange={setSaleWorkspaceId}>
+                <SelectTrigger id="sale-workspace">
+                  <SelectValue placeholder="Selecione o workspace" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workspaces.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="sale-lead">Lead</Label>
+              <Select value={saleLeadId ?? ""} onValueChange={(v) => setSaleLeadId(v)}>
+                <SelectTrigger id="sale-lead">
+                  <SelectValue placeholder="Selecione o lead" />
+                </SelectTrigger>
+                <SelectContent>
+                  {leads.map((l) => (
+                    <SelectItem key={l.id} value={l.id}>
+                      {l.name} {l.phone ? `• ${l.phone}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="sale-date">Data da venda</Label>
+                <Input
+                  id="sale-date"
+                  type="datetime-local"
+                  value={saleDate}
+                  onChange={(e) => setSaleDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="sale-amount">Valor (R$)</Label>
+                <Input
+                  id="sale-amount"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0"
+                  placeholder="0,00"
+                  value={saleAmount}
+                  onChange={(e) => setSaleAmount(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setSaleLeadId(null)} disabled={savingSale}>
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1 bg-gradient-primary hover:opacity-95 shadow-glow gap-2"
+              onClick={submitSale}
+              disabled={savingSale}
+            >
+              <DollarSign className="h-4 w-4" />
+              {savingSale ? "Salvando..." : "Registrar venda"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </AppShell>
