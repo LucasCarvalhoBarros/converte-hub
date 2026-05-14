@@ -44,12 +44,16 @@ export default function Relatorios() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [ads, setAds] = useState(getAds());
   const [moments, setMoments] = useState<Moment[]>([]);
+  const [originsReport, setOriginsReport] = useState<OriginsReport | null>(null);
+  const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
 
   useEffect(() => {
     const load = () => {
       getLeads().then(setLeads).catch(() => setLeads([]));
       fetchAds().catch(() => {});
       fetchMoments().then(setMoments).catch(() => setMoments([]));
+      getOriginsReport().then(setOriginsReport).catch(() => setOriginsReport(null));
+      getSalesReport().then(setSalesReport).catch(() => setSalesReport(null));
     };
     load();
     const offWs = onWorkspaceChange(load);
@@ -91,14 +95,25 @@ export default function Relatorios() {
   const totalLeadsAds = adChartData.reduce((s, r) => s + r.qty, 0);
   const adsAtivos = adChartData.filter((r) => r.name !== "Sem anúncio").length;
 
-  const originSummary = useMemo(
+  // Derived from origins report
+  const totalConversas = originsReport?.total ?? 0;
+  const rastreadas = originsReport?.tracked ?? 0;
+  const naoRastreadas = originsReport?.untracked ?? 0;
+  const overviewPie = useMemo(
     () => [
-      { key: "meta", label: "Meta Ads", value: totals.meta, color: ORIGIN_COLORS.meta },
-      { key: "google", label: "Google Ads", value: totals.google, color: ORIGIN_COLORS.google },
-      { key: "outras", label: "Outras Origens", value: totals.outras, color: ORIGIN_COLORS.outras },
-      { key: "nao", label: "Não Rastreada", value: totals.nao, color: ORIGIN_COLORS.nao },
+      { name: "Rastreadas", value: rastreadas, color: "hsl(152 68% 42%)" },
+      { name: "Não rastreadas", value: naoRastreadas, color: "hsl(38 95% 55%)" },
     ],
-    []
+    [rastreadas, naoRastreadas]
+  );
+
+  // Derived from sales report
+  const totalVendas = salesReport?.totalSales ?? 0;
+  const faturamento = salesReport?.totalRevenue ?? 0;
+  const conversao = salesReport?.conversionRate ?? (totalConversas > 0 ? (totalVendas / totalConversas) * 100 : 0);
+  const sales = useMemo(
+    () => (salesReport?.daily ?? []).map((d) => ({ day: formatDay(d.date), qty: d.quantity, revenue: d.revenue })),
+    [salesReport]
   );
 
   return (
