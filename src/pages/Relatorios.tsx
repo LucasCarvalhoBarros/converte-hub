@@ -147,7 +147,7 @@ export default function Relatorios() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" className="gap-2">
-              <Calendar className="h-4 w-4" /> 14/04/2024 — 03/05/2024
+              <Calendar className="h-4 w-4" /> {rangeLabel}
             </Button>
             <Select value={origem} onValueChange={setOrigem}>
               <SelectTrigger className="w-[180px]">
