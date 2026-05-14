@@ -2,12 +2,22 @@ import "./amplify";
 import {
   signIn,
   signOut,
+  confirmSignIn,
   getCurrentUser,
   fetchAuthSession,
   fetchUserAttributes,
   resetPassword,
   confirmResetPassword,
 } from "aws-amplify/auth";
+
+export class NewPasswordRequiredError extends Error {
+  email: string;
+  constructor(email: string) {
+    super("NEW_PASSWORD_REQUIRED");
+    this.name = "NewPasswordRequiredError";
+    this.email = email;
+  }
+}
 
 const KEY = "converteai_session";
 
@@ -50,10 +60,12 @@ export const auth = {
     });
 
     if (!result.isSignedIn) {
+      const step = result.nextStep?.signInStep;
+      if (step === "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED") {
+        throw new NewPasswordRequiredError(email);
+      }
       throw new Error(
-        result.nextStep?.signInStep
-          ? `Etapa adicional necessária: ${result.nextStep.signInStep}`
-          : "Não foi possível concluir o login."
+        step ? `Etapa adicional necessária: ${step}` : "Não foi possível concluir o login."
       );
     }
 
@@ -67,6 +79,28 @@ export const auth = {
       /* mantém fallback */
     }
 
+    const session: Session = { email: resolvedEmail, name, loggedAt: Date.now() };
+    persist(session);
+    return session;
+  },
+
+  async completeNewPassword(newPassword: string, email: string): Promise<Session> {
+    const result = await confirmSignIn({ challengeResponse: newPassword });
+    if (!result.isSignedIn) {
+      const step = result.nextStep?.signInStep;
+      throw new Error(
+        step ? `Etapa adicional necessária: ${step}` : "Não foi possível concluir o login."
+      );
+    }
+    let name = email.split("@")[0];
+    let resolvedEmail = email;
+    try {
+      const attrs = await fetchUserAttributes();
+      resolvedEmail = attrs.email || email;
+      name = deriveName(attrs as Record<string, string | undefined>, resolvedEmail);
+    } catch {
+      /* fallback */
+    }
     const session: Session = { email: resolvedEmail, name, loggedAt: Date.now() };
     persist(session);
     return session;
