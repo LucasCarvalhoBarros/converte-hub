@@ -913,7 +913,14 @@ export default function Leads() {
                 )}
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-2 border-success/40 text-success hover:bg-success/10 hover:text-success"
+                  onClick={() => { openSaleDialog(detail.id); setDetailId(null); }}
+                >
+                  <DollarSign className="h-4 w-4" /> Registrar venda
+                </Button>
                 <Button
                   variant="outline"
                   className="flex-1 gap-2"
