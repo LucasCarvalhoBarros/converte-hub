@@ -10,25 +10,40 @@ import { toast } from "sonner";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("demo@converte-ai.com");
-  const [password, setPassword] = useState("demo1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
 
   if (auth.get()) return <Navigate to="/" replace />;
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error("Preencha email e senha");
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      auth.login(email);
+    try {
+      await auth.login(email.trim(), password);
       toast.success("Bem-vindo ao Converte-ai 🚀");
       navigate("/", { replace: true });
-    }, 600);
+    } catch (err: any) {
+      const code = err?.name || "";
+      const msg =
+        code === "NotAuthorizedException"
+          ? "Email ou senha inválidos."
+          : code === "UserNotConfirmedException"
+          ? "Conta ainda não confirmada. Verifique seu email."
+          : code === "PasswordResetRequiredException"
+          ? "É necessário redefinir sua senha."
+          : code === "UserNotFoundException"
+          ? "Usuário não encontrado."
+          : err?.message || "Não foi possível entrar. Tente novamente.";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -79,7 +94,7 @@ export default function Login() {
           <div className="mb-8">
             <h2 className="font-display text-3xl font-bold">Entrar na sua conta</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Use qualquer email e senha — esta é uma demonstração.
+              Acesse com sua conta corporativa.
             </p>
           </div>
           <form onSubmit={submit} className="space-y-4">
@@ -97,7 +112,11 @@ export default function Login() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Senha</Label>
-                <button type="button" className="text-xs font-medium text-primary hover:underline">
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgot-password")}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
                   Esqueceu?
                 </button>
               </div>
