@@ -180,7 +180,7 @@ export default function Relatorios() {
                 </div>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="font-semibold">{rastreadas}</span>
-                  <span className="text-xs text-muted-foreground">{((rastreadas / totalConversas) * 100).toFixed(2)}%</span>
+                  <span className="text-xs text-muted-foreground">{pct(rastreadas).toFixed(2)}%</span>
                 </div>
               </div>
               <div className="rounded-lg border border-border/60 p-3">
@@ -189,7 +189,7 @@ export default function Relatorios() {
                 </div>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="font-semibold">{naoRastreadas}</span>
-                  <span className="text-xs text-muted-foreground">{((naoRastreadas / totalConversas) * 100).toFixed(2)}%</span>
+                  <span className="text-xs text-muted-foreground">{pct(naoRastreadas).toFixed(2)}%</span>
                 </div>
               </div>
             </div>
@@ -221,8 +221,8 @@ export default function Relatorios() {
               </div>
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-              <span>{((rastreadas / totalConversas) * 100).toFixed(2)}% Rastreadas</span>
-              <span>{((naoRastreadas / totalConversas) * 100).toFixed(2)}% Não rastreadas</span>
+              <span>{pct(rastreadas).toFixed(2)}% Rastreadas</span>
+              <span>{pct(naoRastreadas).toFixed(2)}% Não rastreadas</span>
             </div>
           </Card>
 
