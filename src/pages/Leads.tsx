@@ -936,6 +936,93 @@ export default function Leads() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Sale dialog */}
+      <Dialog open={!!saleLeadId} onOpenChange={(o) => !o && setSaleLeadId(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-success" /> Registrar venda
+            </DialogTitle>
+            <DialogDescription>
+              Preencha as informações da venda relacionada a este lead.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="sale-workspace">Workspace</Label>
+              <Select value={saleWorkspaceId} onValueChange={setSaleWorkspaceId}>
+                <SelectTrigger id="sale-workspace">
+                  <SelectValue placeholder="Selecione o workspace" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workspaces.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="sale-lead">Lead</Label>
+              <Select value={saleLeadId ?? ""} onValueChange={(v) => setSaleLeadId(v)}>
+                <SelectTrigger id="sale-lead">
+                  <SelectValue placeholder="Selecione o lead" />
+                </SelectTrigger>
+                <SelectContent>
+                  {leads.map((l) => (
+                    <SelectItem key={l.id} value={l.id}>
+                      {l.name} {l.phone ? `• ${l.phone}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="sale-date">Data da venda</Label>
+                <Input
+                  id="sale-date"
+                  type="datetime-local"
+                  value={saleDate}
+                  onChange={(e) => setSaleDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="sale-amount">Valor (R$)</Label>
+                <Input
+                  id="sale-amount"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0"
+                  placeholder="0,00"
+                  value={saleAmount}
+                  onChange={(e) => setSaleAmount(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setSaleLeadId(null)} disabled={savingSale}>
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1 bg-gradient-primary hover:opacity-95 shadow-glow gap-2"
+              onClick={submitSale}
+              disabled={savingSale}
+            >
+              <DollarSign className="h-4 w-4" />
+              {savingSale ? "Salvando..." : "Registrar venda"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
