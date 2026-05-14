@@ -94,7 +94,7 @@ export default function Login() {
           <div className="mb-8">
             <h2 className="font-display text-3xl font-bold">Entrar na sua conta</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Use qualquer email e senha — esta é uma demonstração.
+              Acesse com sua conta corporativa.
             </p>
           </div>
           <form onSubmit={submit} className="space-y-4">
