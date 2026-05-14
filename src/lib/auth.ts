@@ -2,12 +2,22 @@ import "./amplify";
 import {
   signIn,
   signOut,
+  confirmSignIn,
   getCurrentUser,
   fetchAuthSession,
   fetchUserAttributes,
   resetPassword,
   confirmResetPassword,
 } from "aws-amplify/auth";
+
+export class NewPasswordRequiredError extends Error {
+  email: string;
+  constructor(email: string) {
+    super("NEW_PASSWORD_REQUIRED");
+    this.name = "NewPasswordRequiredError";
+    this.email = email;
+  }
+}
 
 const KEY = "converteai_session";
 
