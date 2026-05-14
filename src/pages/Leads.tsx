@@ -589,6 +589,17 @@ export default function Leads() {
                               <Megaphone className="h-2.5 w-2.5" /> {adOf(l.id)!.name}
                             </div>
                           )}
+                          <div className="mt-2 flex">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="h-7 w-full gap-1.5 text-[11px] border-success/40 text-success hover:bg-success/10 hover:text-success"
+                              onClick={(e) => { e.stopPropagation(); openSaleDialog(l.id); }}
+                            >
+                              <DollarSign className="h-3 w-3" /> Registrar venda
+                            </Button>
+                          </div>
                         </div>
                       );
                     })}
