@@ -63,6 +63,60 @@ export default function Leads() {
     return { from, to };
   });
 
+  // Sale dialog state
+  const [saleLeadId, setSaleLeadId] = useState<string | null>(null);
+  const [saleWorkspaceId, setSaleWorkspaceId] = useState<string>("");
+  const [saleAmount, setSaleAmount] = useState<string>("");
+  const [saleDate, setSaleDate] = useState<string>("");
+  const [savingSale, setSavingSale] = useState(false);
+  const workspaces = useMemo(() => listWorkspaces(), [leads]);
+
+  const openSaleDialog = (leadId: string) => {
+    setSaleLeadId(leadId);
+    setSaleWorkspaceId(getStoredWorkspaceId() || (workspaces[0]?.id ?? ""));
+    setSaleAmount("");
+    // Default to "now" in local format YYYY-MM-DDTHH:mm
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const local = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    setSaleDate(local);
+  };
+
+  const submitSale = async () => {
+    if (!saleLeadId) return;
+    const wsId = Number(saleWorkspaceId);
+    const leadIdNum = Number(saleLeadId);
+    const amountNum = Number(String(saleAmount).replace(",", "."));
+    if (!wsId || !leadIdNum) {
+      toast.error("Workspace e lead são obrigatórios");
+      return;
+    }
+    if (!amountNum || amountNum <= 0) {
+      toast.error("Informe um valor válido");
+      return;
+    }
+    if (!saleDate) {
+      toast.error("Informe a data da venda");
+      return;
+    }
+    // saleDate is "YYYY-MM-DDTHH:mm" — append seconds to match expected format
+    const soldAt = saleDate.length === 16 ? `${saleDate}:00` : saleDate;
+    setSavingSale(true);
+    const res = await createSale({
+      workspaceId: wsId,
+      leadId: leadIdNum,
+      amount: amountNum,
+      soldAt,
+    });
+    setSavingSale(false);
+    if (res.ok) {
+      toast.success("Venda registrada com sucesso");
+      setSaleLeadId(null);
+    } else {
+      toast.error("Falha ao registrar a venda");
+    }
+  };
+
   useEffect(() => {
     fetchMoments().then((m) => setMoments(m)).catch(() => {});
     setAds(getAds());
