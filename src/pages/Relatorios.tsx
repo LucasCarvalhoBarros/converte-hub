@@ -47,20 +47,36 @@ export default function Relatorios() {
   const [originsReport, setOriginsReport] = useState<OriginsReport | null>(null);
   const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
 
+  const { startDate, endDate } = useMemo(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - 29);
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    return { startDate: fmt(start), endDate: fmt(end) };
+  }, []);
+
+  const rangeLabel = useMemo(() => {
+    const fmt = (s: string) => {
+      const [y, m, d] = s.split("-");
+      return `${d}/${m}/${y}`;
+    };
+    return `${fmt(startDate)} — ${fmt(endDate)}`;
+  }, [startDate, endDate]);
+
   useEffect(() => {
     const load = () => {
       getLeads().then(setLeads).catch(() => setLeads([]));
       fetchAds().catch(() => {});
       fetchMoments().then(setMoments).catch(() => setMoments([]));
-      getOriginsReport().then(setOriginsReport).catch(() => setOriginsReport(null));
-      getSalesReport().then(setSalesReport).catch(() => setSalesReport(null));
+      getOriginsReport(startDate, endDate).then(setOriginsReport).catch(() => setOriginsReport(null));
+      getSalesReport(startDate, endDate).then(setSalesReport).catch(() => setSalesReport(null));
     };
     load();
     const offWs = onWorkspaceChange(load);
     const offAds = onAdsChange(() => setAds(getAds()));
     const offMoments = onMomentsChange(() => fetchMoments().then(setMoments).catch(() => {}));
     return () => { offWs(); offAds(); offMoments(); };
-  }, []);
+  }, [startDate, endDate]);
 
   const funnelData = useMemo(() => {
     const total = leads.length;
