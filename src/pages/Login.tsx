@@ -10,25 +10,40 @@ import { toast } from "sonner";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("demo@converte-ai.com");
-  const [password, setPassword] = useState("demo1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
 
   if (auth.get()) return <Navigate to="/" replace />;
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error("Preencha email e senha");
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      auth.login(email);
+    try {
+      await auth.login(email.trim(), password);
       toast.success("Bem-vindo ao Converte-ai 🚀");
       navigate("/", { replace: true });
-    }, 600);
+    } catch (err: any) {
+      const code = err?.name || "";
+      const msg =
+        code === "NotAuthorizedException"
+          ? "Email ou senha inválidos."
+          : code === "UserNotConfirmedException"
+          ? "Conta ainda não confirmada. Verifique seu email."
+          : code === "PasswordResetRequiredException"
+          ? "É necessário redefinir sua senha."
+          : code === "UserNotFoundException"
+          ? "Usuário não encontrado."
+          : err?.message || "Não foi possível entrar. Tente novamente.";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
