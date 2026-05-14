@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/Logo";
-import { auth } from "@/lib/auth";
+import { auth, NewPasswordRequiredError } from "@/lib/auth";
 import { toast } from "sonner";
 
 export default function Login() {
