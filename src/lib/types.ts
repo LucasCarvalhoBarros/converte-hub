@@ -17,6 +17,8 @@ export interface Lead {
   unread?: number;
   adId?: string | null;
   funnelStatusId?: string | null;
+  totalSales?: number;
+  totalRevenue?: number;
 }
 
 export interface Message {
