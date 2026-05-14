@@ -701,6 +701,12 @@ export default function Leads() {
                           <Megaphone className="h-2.5 w-2.5" /> {adOf(l.id)!.name}
                         </span>
                       )}
+                      {(typeof l.totalSales === "number" && l.totalSales > 0) && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
+                          <DollarSign className="h-2.5 w-2.5" />
+                          {l.totalSales} venda{l.totalSales > 1 ? "s" : ""} — R$ {l.totalRevenue?.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </button>
