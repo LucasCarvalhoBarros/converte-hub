@@ -112,6 +112,7 @@ export default function Leads() {
     if (res.ok) {
       toast.success("Venda registrada com sucesso");
       setSaleLeadId(null);
+      await loadLeads();
     } else {
       toast.error("Falha ao registrar a venda");
     }
@@ -587,6 +588,17 @@ export default function Leads() {
                           {adOf(l.id) && (
                             <div className="mt-2 inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                               <Megaphone className="h-2.5 w-2.5" /> {adOf(l.id)!.name}
+                            </div>
+                          )}
+                          {(typeof l.totalSales === "number" && l.totalSales > 0) && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1 rounded-md bg-success/10 px-1.5 py-0.5 text-[10px] font-medium text-success">
+                                <DollarSign className="h-2.5 w-2.5" />
+                                {l.totalSales} venda{l.totalSales > 1 ? "s" : ""}
+                              </span>
+                              <span className="text-[10px] font-semibold text-foreground">
+                                R$ {l.totalRevenue?.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
                             </div>
                           )}
                           <div className="mt-2 flex">
