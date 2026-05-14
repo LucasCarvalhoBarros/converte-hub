@@ -99,6 +99,7 @@ export default function Relatorios() {
   const totalConversas = originsReport?.total ?? 0;
   const rastreadas = originsReport?.tracked ?? 0;
   const naoRastreadas = originsReport?.untracked ?? 0;
+  const pct = (n: number) => (totalConversas > 0 ? (n / totalConversas) * 100 : 0);
   const overviewPie = useMemo(
     () => [
       { name: "Rastreadas", value: rastreadas, color: "hsl(152 68% 42%)" },
