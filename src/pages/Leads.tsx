@@ -14,8 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Lead, LeadStatus, Message, STATUS_LIST, STATUS_META } from "@/lib/types";
-import { getLeads, getMessages, sendMessage, updateLeadStatus, updateLeadFunnelStatus, updateLeadAd as apiUpdateLeadAd } from "@/lib/api";
-import { onWorkspaceChange } from "@/lib/workspace";
+import { getLeads, getMessages, sendMessage, updateLeadStatus, updateLeadFunnelStatus, updateLeadAd as apiUpdateLeadAd, createSale } from "@/lib/api";
+import { onWorkspaceChange, listWorkspaces, getStoredWorkspaceId } from "@/lib/workspace";
 import { fetchMoments, onMomentsChange, Moment } from "@/lib/moments";
 import { getAds, fetchAds, onAdsChange, Ad } from "@/lib/ads";
 import { cn } from "@/lib/utils";
