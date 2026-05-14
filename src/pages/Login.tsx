@@ -129,57 +129,113 @@ export default function Login() {
         <div className="w-full max-w-md">
           <div className="lg:hidden mb-8"><Logo /></div>
           <div className="mb-8">
-            <h2 className="font-display text-3xl font-bold">Entrar na sua conta</h2>
+            <h2 className="font-display text-3xl font-bold">
+              {newPasswordRequired ? "Definir nova senha" : "Entrar na sua conta"}
+            </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Acesse com sua conta corporativa.
+              {newPasswordRequired
+                ? "Sua senha é temporária. Crie uma nova senha para concluir o acesso."
+                : "Acesse com sua conta corporativa."}
             </p>
           </div>
-          <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email corporativo</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="voce@empresa.com"
-                autoComplete="email"
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Senha</Label>
-                <button
-                  type="button"
-                  onClick={() => navigate("/forgot-password")}
-                  className="text-xs font-medium text-primary hover:underline"
-                >
-                  Esqueceu?
-                </button>
-              </div>
-              <div className="relative">
+          {!newPasswordRequired ? (
+            <form onSubmit={submit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email corporativo</Label>
                 <Input
-                  id="password"
-                  type={show ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="voce@empresa.com"
+                  autoComplete="email"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShow((s) => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label="Mostrar senha"
-                >
-                  {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
               </div>
-            </div>
-            <Button type="submit" disabled={loading} className="w-full bg-gradient-primary hover:opacity-95 shadow-glow h-11 text-sm font-semibold">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar no Converte-ai"}
-            </Button>
-          </form>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Senha</Label>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/forgot-password")}
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    Esqueceu?
+                  </button>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={show ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShow((s) => !s)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Mostrar senha"
+                  >
+                    {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <Button type="submit" disabled={loading} className="w-full bg-gradient-primary hover:opacity-95 shadow-glow h-11 text-sm font-semibold">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar no Converte-ai"}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={submitNewPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">Nova senha</Label>
+                <div className="relative">
+                  <Input
+                    id="newPassword"
+                    type={show ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mínimo 8 caracteres"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShow((s) => !s)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Mostrar senha"
+                  >
+                    {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmNewPassword">Confirmar nova senha</Label>
+                <Input
+                  id="confirmNewPassword"
+                  type={show ? "text" : "password"}
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="Repita a nova senha"
+                  autoComplete="new-password"
+                />
+              </div>
+              <Button type="submit" disabled={loading} className="w-full bg-gradient-primary hover:opacity-95 shadow-glow h-11 text-sm font-semibold">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar nova senha"}
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewPasswordRequired(false);
+                  setNewPassword("");
+                  setConfirmNewPassword("");
+                  setPassword("");
+                }}
+                className="w-full text-center text-xs text-muted-foreground hover:text-foreground"
+              >
+                Voltar para o login
+              </button>
+            </form>
+          )}
           <p className="mt-6 text-center text-xs text-muted-foreground">
             Ao continuar, você concorda com os <a className="underline hover:text-foreground">Termos</a> e a <a className="underline hover:text-foreground">Política de Privacidade</a>.
           </p>
