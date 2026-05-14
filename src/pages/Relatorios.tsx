@@ -18,13 +18,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { getLeads } from "@/lib/api";
+import { getLeads, getOriginsReport, getSalesReport, type OriginsReport, type SalesReport } from "@/lib/api";
 import { fetchAds, getAds, onAdsChange } from "@/lib/ads";
 import { onWorkspaceChange } from "@/lib/workspace";
 import type { Lead } from "@/lib/types";
 import { fetchMoments, onMomentsChange, type Moment } from "@/lib/moments";
 
-// ---------- Mock data ----------
 const ORIGIN_COLORS = {
   meta: "hsl(217 90% 58%)",
   google: "hsl(152 68% 42%)",
@@ -32,66 +31,12 @@ const ORIGIN_COLORS = {
   nao: "hsl(38 95% 55%)",
 };
 
-const dailyOrigin = [
-  { day: "15 Abr", meta: 44, google: 7, outras: 0, nao: 4 },
-  { day: "16 Abr", meta: 48, google: 11, outras: 0, nao: 6 },
-  { day: "17 Abr", meta: 42, google: 12, outras: 1, nao: 7 },
-  { day: "18 Abr", meta: 39, google: 7, outras: 0, nao: 5 },
-  { day: "19 Abr", meta: 49, google: 15, outras: 0, nao: 4 },
-  { day: "20 Abr", meta: 46, google: 16, outras: 0, nao: 4 },
-  { day: "21 Abr", meta: 42, google: 32, outras: 0, nao: 11 },
-  { day: "22 Abr", meta: 58, google: 9, outras: 1, nao: 12 },
-  { day: "23 Abr", meta: 46, google: 32, outras: 0, nao: 4 },
-  { day: "24 Abr", meta: 43, google: 34, outras: 0, nao: 13 },
-  { day: "25 Abr", meta: 50, google: 18, outras: 0, nao: 8 },
-  { day: "26 Abr", meta: 48, google: 6, outras: 0, nao: 4 },
-  { day: "27 Abr", meta: 46, google: 8, outras: 0, nao: 6 },
-  { day: "28 Abr", meta: 42, google: 7, outras: 1, nao: 13 },
-  { day: "29 Abr", meta: 55, google: 5, outras: 1, nao: 9 },
-  { day: "30 Abr", meta: 34, google: 7, outras: 0, nao: 12 },
-  { day: "01 Mai", meta: 36, google: 5, outras: 0, nao: 10 },
-  { day: "02 Mai", meta: 21, google: 8, outras: 1, nao: 5 },
-  { day: "03 Mai", meta: 27, google: 5, outras: 1, nao: 3 },
-];
-
-const totals = dailyOrigin.reduce(
-  (acc, d) => ({
-    meta: acc.meta + d.meta,
-    google: acc.google + d.google,
-    outras: acc.outras + d.outras,
-    nao: acc.nao + d.nao,
-  }),
-  { meta: 0, google: 0, outras: 0, nao: 0 }
-);
-
-const totalConversas = totals.meta + totals.google + totals.outras + totals.nao;
-const rastreadas = totals.meta + totals.google + totals.outras;
-const naoRastreadas = totals.nao;
-
-const overviewPie = [
-  { name: "Rastreadas", value: rastreadas, color: "hsl(152 68% 42%)" },
-  { name: "Não rastreadas", value: naoRastreadas, color: "hsl(38 95% 55%)" },
-];
-
-const funnel = [
-  { stage: "Fez contato", value: totalConversas, pct: 100 },
-  { stage: "Cotação de valores", value: Math.round(totalConversas * 0.28), pct: 28 },
-  { stage: "Comprou", value: 27, pct: Math.round((27 / totalConversas) * 100 * 100) / 100 },
-];
-
-const sales = [
-  { day: "15 Abr", qty: 2 }, { day: "16 Abr", qty: 0 }, { day: "17 Abr", qty: 2 },
-  { day: "18 Abr", qty: 1 }, { day: "19 Abr", qty: 0 }, { day: "20 Abr", qty: 1 },
-  { day: "21 Abr", qty: 0 }, { day: "22 Abr", qty: 3 }, { day: "23 Abr", qty: 4 },
-  { day: "24 Abr", qty: 1 }, { day: "25 Abr", qty: 0 }, { day: "26 Abr", qty: 2 },
-  { day: "27 Abr", qty: 2 }, { day: "28 Abr", qty: 3 }, { day: "29 Abr", qty: 2 },
-  { day: "30 Abr", qty: 2 }, { day: "01 Mai", qty: 1 }, { day: "02 Mai", qty: 1 },
-  { day: "03 Mai", qty: 0 },
-];
-
-const totalVendas = sales.reduce((s, d) => s + d.qty, 0);
-const faturamento = 15799.9;
-const conversao = (totalVendas / totalConversas) * 100;
+function formatDay(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  return `${String(d.getDate()).padStart(2, "0")} ${months[d.getMonth()]}`;
+}
 
 // ---------- Component ----------
 export default function Relatorios() {
@@ -99,12 +44,16 @@ export default function Relatorios() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [ads, setAds] = useState(getAds());
   const [moments, setMoments] = useState<Moment[]>([]);
+  const [originsReport, setOriginsReport] = useState<OriginsReport | null>(null);
+  const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
 
   useEffect(() => {
     const load = () => {
       getLeads().then(setLeads).catch(() => setLeads([]));
       fetchAds().catch(() => {});
       fetchMoments().then(setMoments).catch(() => setMoments([]));
+      getOriginsReport().then(setOriginsReport).catch(() => setOriginsReport(null));
+      getSalesReport().then(setSalesReport).catch(() => setSalesReport(null));
     };
     load();
     const offWs = onWorkspaceChange(load);
@@ -146,14 +95,26 @@ export default function Relatorios() {
   const totalLeadsAds = adChartData.reduce((s, r) => s + r.qty, 0);
   const adsAtivos = adChartData.filter((r) => r.name !== "Sem anúncio").length;
 
-  const originSummary = useMemo(
+  // Derived from origins report
+  const totalConversas = originsReport?.total ?? 0;
+  const rastreadas = originsReport?.tracked ?? 0;
+  const naoRastreadas = originsReport?.untracked ?? 0;
+  const pct = (n: number) => (totalConversas > 0 ? (n / totalConversas) * 100 : 0);
+  const overviewPie = useMemo(
     () => [
-      { key: "meta", label: "Meta Ads", value: totals.meta, color: ORIGIN_COLORS.meta },
-      { key: "google", label: "Google Ads", value: totals.google, color: ORIGIN_COLORS.google },
-      { key: "outras", label: "Outras Origens", value: totals.outras, color: ORIGIN_COLORS.outras },
-      { key: "nao", label: "Não Rastreada", value: totals.nao, color: ORIGIN_COLORS.nao },
+      { name: "Rastreadas", value: rastreadas, color: "hsl(152 68% 42%)" },
+      { name: "Não rastreadas", value: naoRastreadas, color: "hsl(38 95% 55%)" },
     ],
-    []
+    [rastreadas, naoRastreadas]
+  );
+
+  // Derived from sales report
+  const totalVendas = salesReport?.totalSales ?? 0;
+  const faturamento = salesReport?.totalRevenue ?? 0;
+  const conversao = salesReport?.conversionRate ?? (totalConversas > 0 ? (totalVendas / totalConversas) * 100 : 0);
+  const sales = useMemo(
+    () => (salesReport?.daily ?? []).map((d) => ({ day: formatDay(d.date), qty: d.quantity, revenue: d.revenue })),
+    [salesReport]
   );
 
   return (
@@ -219,7 +180,7 @@ export default function Relatorios() {
                 </div>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="font-semibold">{rastreadas}</span>
-                  <span className="text-xs text-muted-foreground">{((rastreadas / totalConversas) * 100).toFixed(2)}%</span>
+                  <span className="text-xs text-muted-foreground">{pct(rastreadas).toFixed(2)}%</span>
                 </div>
               </div>
               <div className="rounded-lg border border-border/60 p-3">
@@ -228,7 +189,7 @@ export default function Relatorios() {
                 </div>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="font-semibold">{naoRastreadas}</span>
-                  <span className="text-xs text-muted-foreground">{((naoRastreadas / totalConversas) * 100).toFixed(2)}%</span>
+                  <span className="text-xs text-muted-foreground">{pct(naoRastreadas).toFixed(2)}%</span>
                 </div>
               </div>
             </div>
@@ -260,8 +221,8 @@ export default function Relatorios() {
               </div>
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-              <span>{((rastreadas / totalConversas) * 100).toFixed(2)}% Rastreadas</span>
-              <span>{((naoRastreadas / totalConversas) * 100).toFixed(2)}% Não rastreadas</span>
+              <span>{pct(rastreadas).toFixed(2)}% Rastreadas</span>
+              <span>{pct(naoRastreadas).toFixed(2)}% Não rastreadas</span>
             </div>
           </Card>
 
