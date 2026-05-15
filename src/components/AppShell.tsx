@@ -133,14 +133,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-4 md:px-6">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Abrir menu</span>
-              </Button>
-            </SheetTrigger>
-          </Sheet>
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(true)}>
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Abrir menu</span>
+          </Button>
           <div className="md:hidden"><Logo compact /></div>
           <WorkspaceSwitcher />
           <div className="relative hidden lg:block flex-1 max-w-sm">
@@ -151,9 +147,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-4 w-4" />
               <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
-            </Button>
-            <Button className="bg-gradient-primary hover:opacity-95 shadow-glow">
-              <MessageSquare className="h-4 w-4 mr-2" /> Nova conversa
             </Button>
           </div>
         </header>
