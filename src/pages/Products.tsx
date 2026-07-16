@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { Product, ProductInput, listProducts, createProduct, updateProduct, deleteProduct, uploadProductImage } from "@/lib/products";
 import { onWorkspaceChange } from "@/lib/workspace";
 
-const empty: ProductInput = { sku: "", name: "", category: "", cost: 0, price: 0, stock: 0, min_stock: 0, active: true, image_url: null };
+const empty: ProductInput = { sku: "", name: "", category: "", complement: "", cost: 0, price: 0, avg_selling_price: 0, stock: 0, min_stock: 0, active: true, image_url: null };
 
 export default function ProductsPage() {
   const [items, setItems] = useState<Product[]>([]);
