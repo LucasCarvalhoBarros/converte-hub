@@ -54,7 +54,7 @@ export default function ForgotPassword() {
             Vamos enviar um código de verificação para o seu email cadastrado.
           </p>
         </div>
-        <div className="relative text-xs text-white/50">© {new Date().getFullYear()} Converte-ai.</div>
+        <div className="relative text-xs text-white/50">© {new Date().getFullYear()} AAL Peças.</div>
       </div>
 
       <div className="flex items-center justify-center p-6 md:p-10 bg-background">
