@@ -267,6 +267,15 @@ export default function ProductsPage() {
               <Label>Nome</Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
+            <div className="space-y-1">
+              <Label>Complemento</Label>
+              <Textarea
+                value={form.complement ?? ""}
+                onChange={(e) => setForm({ ...form, complement: e.target.value })}
+                placeholder="Ex.: modelo, ano, observações técnicas"
+                rows={2}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Custo (R$)</Label>
@@ -278,16 +287,22 @@ export default function ProductsPage() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Preço venda médio no mercado (R$)</Label>
+                <Input type="number" step="0.01" value={form.avg_selling_price ?? 0} onChange={(e) => setForm({ ...form, avg_selling_price: Number(e.target.value) })} />
+              </div>
+              <div className="space-y-1">
+                <Label>Estoque mínimo</Label>
+                <Input type="number" value={form.min_stock ?? 0} onChange={(e) => setForm({ ...form, min_stock: Number(e.target.value) })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               {!editing && (
                 <div className="space-y-1">
                   <Label>Estoque inicial</Label>
                   <Input type="number" value={form.stock ?? 0} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
                 </div>
               )}
-              <div className="space-y-1">
-                <Label>Estoque mínimo</Label>
-                <Input type="number" value={form.min_stock ?? 0} onChange={(e) => setForm({ ...form, min_stock: Number(e.target.value) })} />
-              </div>
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={form.active ?? true} onCheckedChange={(v) => setForm({ ...form, active: v })} />
