@@ -1,54 +1,64 @@
-# Integração com Amazon Cognito (AWS Amplify)
 
-Mantém o layout atual de `src/pages/Login.tsx` e troca a autenticação mockada por Cognito real, usando `USER_PASSWORD_AUTH` em um App Client público (sem secret).
+# Módulo de Estoque e Vendas Multi-Marketplace
 
-## O que muda
+Vou adicionar uma nova área ao sistema atual (que continua com Cognito + APIs de leads existentes intactos) para gestão de **produtos**, **estoque único compartilhado** e **vendas manuais** feitas em Mercado Livre, Magalu, Loja própria e Outros. Os dados novos ficam no **Lovable Cloud** (Postgres gerenciado).
 
-### 1. Dependências
-- Instalar `aws-amplify` (v6).
+## Novas telas
 
-### 2. Configuração do Amplify
-Novo arquivo `src/lib/amplify.ts`:
-- Chama `Amplify.configure({...})` com:
-  - `userPoolId: us-east-1_gjnrnWUeM`
-  - `userPoolClientId: 461g5kj87m78cevjqgon7cnk8c`
-  - `region: us-east-1`
-  - `loginWith.username: true` (email vai no campo username)
-- Importado uma vez em `src/main.tsx` antes do render.
+1. **/produtos** — lista + busca de produtos (SKU, nome, categoria, preço, custo, estoque atual, estoque mínimo). Badge vermelha quando `estoque <= mínimo`. Ações: novo, editar, arquivar.
+2. **/produtos/movimentacoes** — histórico de entradas/saídas/ajustes de estoque com filtro por produto e período. Botão "Nova movimentação" (entrada de compra, ajuste, devolução).
+3. **/vendas** — lista de vendas manuais com filtros por canal, período e produto. Botão "Registrar venda" abre modal com: canal (ML/Magalu/Própria/Outros), data, cliente (texto livre opcional), itens (produto + qtd + preço unit), frete, desconto, total calculado, nº do pedido no marketplace (opcional). Ao salvar, dá baixa automática no estoque compartilhado.
+4. **/dashboard-vendas** — cards com faturamento do mês, ticket médio, vendas por canal (pizza), top produtos, curva diária. Filtro de período.
 
-### 3. Camada de auth (`src/lib/auth.ts`)
-Reescrita para usar Amplify mantendo a mesma API consumida pelo app (`auth.get()`, `auth.login()`, `auth.logout()`):
-- `auth.login(email, password)` → `signIn({ username: email, password, options: { authFlowType: "USER_PASSWORD_AUTH" } })`, depois `fetchUserAttributes()` para popular `name`/`email`, e persiste a sessão em `localStorage` (chave atual `converteai_session`).
-- `auth.logout()` → `signOut()` + limpa o storage.
-- `auth.get()` → continua síncrono (lê do localStorage) para não quebrar `AppShell` e `Login`.
-- Novo `auth.bootstrap()` (assíncrono) chamado no `main.tsx`/`App.tsx`: tenta `getCurrentUser()`/`fetchAuthSession()`; se válido, repõe o `localStorage`; se inválido, limpa.
-- Novos helpers para reset: `auth.forgotPassword(email)` → `resetPassword`, `auth.confirmForgotPassword(email, code, newPassword)` → `confirmResetPassword`.
-- Novo helper `auth.getIdToken()` para o `api.ts` enviar `Authorization: Bearer <idToken>` quando necessário (não altero rotas existentes nesse plano, só deixo disponível).
+## Menu lateral
 
-### 4. Tela de login (`src/pages/Login.tsx`)
-- Layout, copy e estilos preservados.
-- `submit` passa a ser `async`, chama `auth.login(email, password)`, trata erros do Cognito (`NotAuthorizedException`, `UserNotConfirmedException`, `PasswordResetRequiredException`) com `toast.error` em PT-BR.
-- Remove os valores demo pré-preenchidos (`demo@converte-ai.com` / `demo1234`) e o texto "Use qualquer email e senha — esta é uma demonstração."
-- Botão "Esqueceu?" passa a navegar para `/forgot-password`.
+Adicionar seção "Loja" no `AppShell` com: Produtos, Movimentações, Vendas, Dashboard vendas — separada da seção atual de Leads/Conversas.
 
-### 5. Fluxo "esqueci minha senha" (novo)
-Duas telas seguindo o mesmo design da Login (split-screen, gradient hero à esquerda):
-- `src/pages/ForgotPassword.tsx` (`/forgot-password`): campo email → `auth.forgotPassword` → redireciona para `/reset-password?email=...`.
-- `src/pages/ResetPassword.tsx` (`/reset-password`): campos código + nova senha + confirmação → `auth.confirmForgotPassword` → toast de sucesso e redirect para `/login`.
-- Rotas adicionadas em `src/App.tsx`.
+## Modelo de dados (Lovable Cloud)
 
-### 6. Cleanup
-- `Login` redireciona para `/` se já houver sessão (mantido).
-- `AppShell` continua usando `auth.get()` (sem mudanças visuais).
+```text
+products         (id, sku UNIQUE, name, category, cost, price, stock, min_stock,
+                  active, workspace_id, created_at, updated_at)
+stock_movements  (id, product_id FK, type[in|out|adjust], quantity, reason,
+                  reference_id, workspace_id, created_at, created_by)
+sales            (id, channel[mercado_livre|magalu|propria|outros], sold_at,
+                  customer_name, marketplace_order_id, subtotal, shipping,
+                  discount, total, notes, workspace_id, created_at, created_by)
+sale_items       (id, sale_id FK, product_id FK, quantity, unit_price, subtotal)
+```
 
-## Pré-requisitos no Cognito (do seu lado)
-- App Client `461g5kj87m78cevjqgon7cnk8c` precisa ter **ALLOW_USER_PASSWORD_AUTH** habilitado em "Authentication flows".
-- Confirmar que o client é **público** (sem secret) — necessário para SPA.
-- User Pool com pelo menos um usuário criado e confirmado para conseguir testar.
+- Estoque compartilhado: um único campo `stock` por produto; toda venda gera `stock_movements(type='out')` e decrementa `products.stock` via trigger/edge function.
+- Cada tabela recebe `GRANT` para `authenticated`/`service_role` e RLS restringindo por `workspace_id` (lido do JWT/Cognito via mapeamento — inicialmente por coluna `workspace_id` livre, já que o app usa Cognito e não o auth do Cloud; ver seção técnica).
 
-## Observação sobre os scopes / response type
-Os parâmetros `scopes: openid email phone` e `response type: token` que você passou são da **Hosted UI / OAuth flow**, que você decidiu não usar. No fluxo direto via Amplify (`USER_PASSWORD_AUTH`) eles não se aplicam — o Cognito devolve `idToken` + `accessToken` + `refreshToken` automaticamente. Se mais tarde quiser chamar APIs com escopos OAuth específicos, aí sim teríamos que reativar o domínio Hosted UI.
+## Vendas + baixa de estoque
 
-## Fora do escopo
-- Não vou conectar o `idToken` às chamadas atuais de `src/lib/api.ts` (a API `execute-api` hoje aceita sem auth). Deixo `auth.getIdToken()` pronto para quando você quiser proteger.
-- Não vou criar tela de signup nem MFA.
+- Validação: bloqueia venda se algum item exceder o estoque atual (mensagem clara).
+- Cálculo automático de subtotais e total no modal.
+- Após salvar: refetch da lista, toast de sucesso, estoque atualizado nas telas.
+- Edição/estorno: excluir venda gera `stock_movements(type='in', reason='estorno')` e devolve o saldo.
+
+## O que NÃO muda
+
+- Login Cognito, tela de Leads, Conversas, Relatórios de leads, APIs em `05m7xwli09.execute-api...` — tudo intacto.
+- A rota `/relatorios` de vendas de leads permanece; o novo `/dashboard-vendas` é separado, focado no estoque/marketplace.
+
+## Detalhes técnicos
+
+- Ativar **Lovable Cloud** (Supabase gerenciado) — apenas para as novas tabelas.
+- Como a autenticação real é Cognito (não Supabase Auth), as tabelas novas usam `workspace_id` (int) como chave lógica e o filtro é aplicado no cliente/edge function usando o workspace atual (`getStoredWorkspaceId`). RLS inicial: `USING (true)` com GRANT a `authenticated` — segurança principal fica no gateway/edge; posso endurecer depois se quiser mapear Cognito → JWT do Supabase.
+- Migrações SQL criam as 4 tabelas com GRANTs obrigatórios, índices em `sku`, `workspace_id`, `product_id`, `sold_at`.
+- Camada de acesso: `src/lib/products.ts`, `src/lib/stock.ts`, `src/lib/sales.ts` usando `supabase-js`.
+- Validação com **zod** nos formulários (produto, venda, movimentação).
+- Reuso dos componentes shadcn já presentes (Card, Dialog, Table, Input, Select, Switch).
+- Novas rotas registradas em `src/App.tsx`.
+
+## Entregas em ordem
+
+1. Ativar Lovable Cloud + migração inicial das 4 tabelas com GRANTs e índices.
+2. `src/lib/products.ts` + tela **/produtos** (CRUD).
+3. `src/lib/stock.ts` + tela **/produtos/movimentacoes**.
+4. `src/lib/sales.ts` + tela **/vendas** com modal e baixa automática.
+5. Tela **/dashboard-vendas** com gráficos (recharts, já no projeto).
+6. Item de menu "Loja" no `AppShell`.
+
+Depois disso podemos evoluir para integração real com API do Mercado Livre (OAuth, sync de anúncios/pedidos) em uma segunda fase.
