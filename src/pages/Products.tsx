@@ -115,7 +115,7 @@ export default function ProductsPage() {
   const visible = items.filter((p) => {
     const s = search.trim().toLowerCase();
     if (!s) return true;
-    return p.name.toLowerCase().includes(s) || p.sku.toLowerCase().includes(s) || (p.category ?? "").toLowerCase().includes(s);
+    return p.name.toLowerCase().includes(s) || p.sku.toLowerCase().includes(s) || (p.category ?? "").toLowerCase().includes(s) || (p.complement ?? "").toLowerCase().includes(s);
   });
 
   return (
