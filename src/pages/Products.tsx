@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Package, Plus, Trash2, Loader2, AlertTriangle, RefreshCw, Search } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Package, Plus, Trash2, Loader2, AlertTriangle, RefreshCw, Search, ImagePlus, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Product, ProductInput, listProducts, createProduct, updateProduct, deleteProduct } from "@/lib/products";
+import { Product, ProductInput, listProducts, createProduct, updateProduct, deleteProduct, uploadProductImage } from "@/lib/products";
 import { onWorkspaceChange } from "@/lib/workspace";
 
-const empty: ProductInput = { sku: "", name: "", category: "", cost: 0, price: 0, stock: 0, min_stock: 0, active: true };
+const empty: ProductInput = { sku: "", name: "", category: "", cost: 0, price: 0, stock: 0, min_stock: 0, active: true, image_url: null };
 
 export default function ProductsPage() {
   const [items, setItems] = useState<Product[]>([]);
