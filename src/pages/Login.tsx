@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Loader2, Sparkles, ShieldCheck, Zap } from "lucide-react";
+import { Eye, EyeOff, Loader2, Package, Truck, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -97,18 +97,17 @@ export default function Login() {
         <div className="relative space-y-8">
           <div>
             <h1 className="font-display text-4xl font-bold leading-tight">
-              Transforme conversas de <span className="text-primary-glow">WhatsApp</span> em clientes.
+              A <span className="text-primary-glow">força</span> que move o seu caminhão — e o seu negócio.
             </h1>
             <p className="mt-4 max-w-md text-white/70">
-              CRM inteligente para times comerciais que não querem perder mais nenhum lead.
-              Pipeline visual, automações e respostas com IA.
+              Gestão completa para sua loja de peças de linha pesada: estoque, vendas em marketplaces e atendimento em um só lugar.
             </p>
           </div>
           <div className="grid gap-3">
             {[
-              { icon: Sparkles, t: "IA que sugere respostas em tempo real" },
-              { icon: Zap, t: "Pipeline visual com automações" },
-              { icon: ShieldCheck, t: "Conformidade total com LGPD" },
+              { icon: Package, t: "Controle de estoque em tempo real" },
+              { icon: Truck, t: "Vendas integradas: Mercado Livre, Magalu e loja própria" },
+              { icon: BarChart3, t: "Dashboards de vendas e desempenho" },
             ].map(({ icon: Icon, t }) => (
               <div key={t} className="flex items-center gap-3 text-sm text-white/80">
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 backdrop-blur">
