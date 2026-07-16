@@ -7,8 +7,10 @@ export interface Product {
   sku: string;
   name: string;
   category: string | null;
+  complement: string | null;
   cost: number;
   price: number;
+  avg_selling_price: number;
   stock: number;
   min_stock: number;
   active: boolean;
@@ -21,8 +23,10 @@ export type ProductInput = {
   sku: string;
   name: string;
   category?: string | null;
+  complement?: string | null;
   cost?: number;
   price?: number;
+  avg_selling_price?: number;
   stock?: number;
   min_stock?: number;
   active?: boolean;
