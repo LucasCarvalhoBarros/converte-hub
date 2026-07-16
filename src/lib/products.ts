@@ -73,6 +73,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
     stock: 0, // start at 0; movement below sets it
     min_stock: input.min_stock ?? 0,
     active: input.active ?? true,
+    image_url: input.image_url ?? null,
   };
   const { data, error } = await supabase.from("products").insert(payload).select("*").single();
   if (error) throw error;
