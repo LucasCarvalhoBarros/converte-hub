@@ -14,7 +14,179 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      products: {
+        Row: {
+          active: boolean
+          category: string | null
+          cost: number
+          created_at: string
+          id: number
+          min_stock: number
+          name: string
+          price: number
+          sku: string
+          stock: number
+          updated_at: string
+          workspace_id: number
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          cost?: number
+          created_at?: string
+          id?: number
+          min_stock?: number
+          name: string
+          price?: number
+          sku: string
+          stock?: number
+          updated_at?: string
+          workspace_id?: number
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          cost?: number
+          created_at?: string
+          id?: number
+          min_stock?: number
+          name?: string
+          price?: number
+          sku?: string
+          stock?: number
+          updated_at?: string
+          workspace_id?: number
+        }
+        Relationships: []
+      }
+      sale_items: {
+        Row: {
+          id: number
+          product_id: number
+          quantity: number
+          sale_id: number
+          subtotal: number
+          unit_price: number
+        }
+        Insert: {
+          id?: number
+          product_id: number
+          quantity: number
+          sale_id: number
+          subtotal: number
+          unit_price: number
+        }
+        Update: {
+          id?: number
+          product_id?: number
+          quantity?: number
+          sale_id?: number
+          subtotal?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_orders: {
+        Row: {
+          channel: Database["public"]["Enums"]["sale_channel"]
+          created_at: string
+          customer_name: string | null
+          discount: number
+          id: number
+          marketplace_order_id: string | null
+          notes: string | null
+          shipping: number
+          sold_at: string
+          subtotal: number
+          total: number
+          workspace_id: number
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["sale_channel"]
+          created_at?: string
+          customer_name?: string | null
+          discount?: number
+          id?: number
+          marketplace_order_id?: string | null
+          notes?: string | null
+          shipping?: number
+          sold_at?: string
+          subtotal?: number
+          total?: number
+          workspace_id?: number
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["sale_channel"]
+          created_at?: string
+          customer_name?: string | null
+          discount?: number
+          id?: number
+          marketplace_order_id?: string | null
+          notes?: string | null
+          shipping?: number
+          sold_at?: string
+          subtotal?: number
+          total?: number
+          workspace_id?: number
+        }
+        Relationships: []
+      }
+      stock_movements: {
+        Row: {
+          created_at: string
+          id: number
+          product_id: number
+          quantity: number
+          reason: string | null
+          reference_id: number | null
+          type: Database["public"]["Enums"]["stock_movement_type"]
+          workspace_id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          product_id: number
+          quantity: number
+          reason?: string | null
+          reference_id?: number | null
+          type: Database["public"]["Enums"]["stock_movement_type"]
+          workspace_id?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          product_id?: number
+          quantity?: number
+          reason?: string | null
+          reference_id?: number | null
+          type?: Database["public"]["Enums"]["stock_movement_type"]
+          workspace_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +195,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      sale_channel: "mercado_livre" | "magalu" | "propria" | "outros"
+      stock_movement_type: "in" | "out" | "adjust"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +323,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      sale_channel: ["mercado_livre", "magalu", "propria", "outros"],
+      stock_movement_type: ["in", "out", "adjust"],
+    },
   },
 } as const
