@@ -50,8 +50,8 @@ export default function ProductsPage() {
   const openEdit = (p: Product) => {
     setEditing(p);
     setForm({
-      sku: p.sku, name: p.name, category: p.category ?? "",
-      cost: p.cost, price: p.price, stock: p.stock, min_stock: p.min_stock, active: p.active,
+      sku: p.sku, name: p.name, category: p.category ?? "", complement: p.complement ?? "",
+      cost: p.cost, price: p.price, avg_selling_price: p.avg_selling_price, stock: p.stock, min_stock: p.min_stock, active: p.active,
       image_url: p.image_url,
     });
     setDialogOpen(true);
