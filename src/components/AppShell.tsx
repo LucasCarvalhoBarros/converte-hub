@@ -12,11 +12,14 @@ import { cn } from "@/lib/utils";
 const nav = [
   { to: "/relatorios", label: "Dashboards", icon: BarChart3 },
   { to: "/leads", label: "Leads", icon: Users },
-  { to: "/config/status", label: "Status do funil", icon: Tag },
+  { to: "/produtos", label: "Produtos", icon: Package, section: "Loja" },
+  { to: "/estoque/movimentacoes", label: "Estoque", icon: Sliders },
+  { to: "/vendas", label: "Vendas", icon: ShoppingCart },
+  { to: "/dashboard-vendas", label: "Dashboard vendas", icon: TrendingUp },
+  { to: "/config/status", label: "Status do funil", icon: Tag, section: "Configurações" },
   { to: "/config/anuncios", label: "Anúncios", icon: Megaphone },
   { to: "/config/plataformas", label: "Plataformas", icon: Layers },
   { to: "/config/clientes", label: "Clientes", icon: Building2 },
-  { to: "/config", label: "Configurações", icon: Settings },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
