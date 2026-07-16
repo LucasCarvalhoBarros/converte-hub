@@ -72,8 +72,10 @@ export async function createProduct(input: ProductInput): Promise<Product> {
     sku: input.sku,
     name: input.name,
     category: input.category ?? null,
+    complement: input.complement ?? null,
     cost: input.cost ?? 0,
     price: input.price ?? 0,
+    avg_selling_price: input.avg_selling_price ?? 0,
     stock: 0, // start at 0; movement below sets it
     min_stock: input.min_stock ?? 0,
     active: input.active ?? true,
