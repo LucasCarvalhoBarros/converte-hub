@@ -176,7 +176,7 @@ export default function ProductsPage() {
                   )}
                   onClick={() => openEdit(p)}
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_auto_auto_auto] items-center gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_auto_auto_auto_auto] items-center gap-3">
                     <div className="h-12 w-12 rounded-md bg-muted overflow-hidden flex items-center justify-center shrink-0">
                       {p.image_url ? (
                         <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
@@ -189,6 +189,7 @@ export default function ProductsPage() {
                       <div className="text-xs text-muted-foreground truncate">
                         SKU <span className="font-mono">{p.sku}</span>
                         {p.category ? ` · ${p.category}` : ""}
+                        {p.complement ? ` · ${p.complement}` : ""}
                       </div>
                     </div>
                     <div className="text-xs text-right">
@@ -198,6 +199,10 @@ export default function ProductsPage() {
                     <div className="text-xs text-right">
                       <div className="text-muted-foreground">Preço</div>
                       <div className="font-semibold">R$ {Number(p.price).toFixed(2)}</div>
+                    </div>
+                    <div className="text-xs text-right">
+                      <div className="text-muted-foreground">Preço médio mercado</div>
+                      <div className="font-semibold">R$ {Number(p.avg_selling_price).toFixed(2)}</div>
                     </div>
                     <div className={cn("text-xs text-right flex items-center gap-1 justify-end", low && "text-destructive")}>
                       {low && <AlertTriangle className="h-3.5 w-3.5" />}
