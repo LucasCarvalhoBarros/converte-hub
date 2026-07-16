@@ -3,6 +3,7 @@ import { Package, Plus, Trash2, Loader2, AlertTriangle, RefreshCw, Search, Image
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -12,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { Product, ProductInput, listProducts, createProduct, updateProduct, deleteProduct, uploadProductImage } from "@/lib/products";
 import { onWorkspaceChange } from "@/lib/workspace";
 
-const empty: ProductInput = { sku: "", name: "", category: "", cost: 0, price: 0, stock: 0, min_stock: 0, active: true, image_url: null };
+const empty: ProductInput = { sku: "", name: "", category: "", complement: "", cost: 0, price: 0, avg_selling_price: 0, stock: 0, min_stock: 0, active: true, image_url: null };
 
 export default function ProductsPage() {
   const [items, setItems] = useState<Product[]>([]);
@@ -50,8 +51,8 @@ export default function ProductsPage() {
   const openEdit = (p: Product) => {
     setEditing(p);
     setForm({
-      sku: p.sku, name: p.name, category: p.category ?? "",
-      cost: p.cost, price: p.price, stock: p.stock, min_stock: p.min_stock, active: p.active,
+      sku: p.sku, name: p.name, category: p.category ?? "", complement: p.complement ?? "",
+      cost: p.cost, price: p.price, avg_selling_price: p.avg_selling_price, stock: p.stock, min_stock: p.min_stock, active: p.active,
       image_url: p.image_url,
     });
     setDialogOpen(true);
@@ -114,7 +115,7 @@ export default function ProductsPage() {
   const visible = items.filter((p) => {
     const s = search.trim().toLowerCase();
     if (!s) return true;
-    return p.name.toLowerCase().includes(s) || p.sku.toLowerCase().includes(s) || (p.category ?? "").toLowerCase().includes(s);
+    return p.name.toLowerCase().includes(s) || p.sku.toLowerCase().includes(s) || (p.category ?? "").toLowerCase().includes(s) || (p.complement ?? "").toLowerCase().includes(s);
   });
 
   return (
@@ -175,7 +176,7 @@ export default function ProductsPage() {
                   )}
                   onClick={() => openEdit(p)}
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_auto_auto_auto] items-center gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_auto_auto_auto_auto] items-center gap-3">
                     <div className="h-12 w-12 rounded-md bg-muted overflow-hidden flex items-center justify-center shrink-0">
                       {p.image_url ? (
                         <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
@@ -188,6 +189,7 @@ export default function ProductsPage() {
                       <div className="text-xs text-muted-foreground truncate">
                         SKU <span className="font-mono">{p.sku}</span>
                         {p.category ? ` · ${p.category}` : ""}
+                        {p.complement ? ` · ${p.complement}` : ""}
                       </div>
                     </div>
                     <div className="text-xs text-right">
@@ -197,6 +199,10 @@ export default function ProductsPage() {
                     <div className="text-xs text-right">
                       <div className="text-muted-foreground">Preço</div>
                       <div className="font-semibold">R$ {Number(p.price).toFixed(2)}</div>
+                    </div>
+                    <div className="text-xs text-right">
+                      <div className="text-muted-foreground">Preço médio mercado</div>
+                      <div className="font-semibold">R$ {Number(p.avg_selling_price).toFixed(2)}</div>
                     </div>
                     <div className={cn("text-xs text-right flex items-center gap-1 justify-end", low && "text-destructive")}>
                       {low && <AlertTriangle className="h-3.5 w-3.5" />}
@@ -261,6 +267,15 @@ export default function ProductsPage() {
               <Label>Nome</Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
+            <div className="space-y-1">
+              <Label>Complemento</Label>
+              <Textarea
+                value={form.complement ?? ""}
+                onChange={(e) => setForm({ ...form, complement: e.target.value })}
+                placeholder="Ex.: modelo, ano, observações técnicas"
+                rows={2}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Custo (R$)</Label>
@@ -272,20 +287,26 @@ export default function ProductsPage() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Preço venda médio no mercado (R$)</Label>
+                <Input type="number" step="0.01" value={form.avg_selling_price ?? 0} onChange={(e) => setForm({ ...form, avg_selling_price: Number(e.target.value) })} />
+              </div>
+              <div className="space-y-1">
+                <Label>Estoque mínimo</Label>
+                <Input type="number" value={form.min_stock ?? 0} onChange={(e) => setForm({ ...form, min_stock: Number(e.target.value) })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 items-end">
               {!editing && (
                 <div className="space-y-1">
                   <Label>Estoque inicial</Label>
                   <Input type="number" value={form.stock ?? 0} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
                 </div>
               )}
-              <div className="space-y-1">
-                <Label>Estoque mínimo</Label>
-                <Input type="number" value={form.min_stock ?? 0} onChange={(e) => setForm({ ...form, min_stock: Number(e.target.value) })} />
+              <div className="flex items-center gap-2 pb-2">
+                <Switch checked={form.active ?? true} onCheckedChange={(v) => setForm({ ...form, active: v })} />
+                <Label>Ativo</Label>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={form.active ?? true} onCheckedChange={(v) => setForm({ ...form, active: v })} />
-              <Label>Ativo</Label>
             </div>
           </div>
           <DialogFooter>

@@ -17,7 +17,9 @@ export type Database = {
       products: {
         Row: {
           active: boolean
+          avg_selling_price: number
           category: string | null
+          complement: string | null
           cost: number
           created_at: string
           id: number
@@ -32,7 +34,9 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          avg_selling_price?: number
           category?: string | null
+          complement?: string | null
           cost?: number
           created_at?: string
           id?: number
@@ -47,7 +51,9 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          avg_selling_price?: number
           category?: string | null
+          complement?: string | null
           cost?: number
           created_at?: string
           id?: number

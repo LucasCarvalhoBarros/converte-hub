@@ -17,8 +17,9 @@ Adicionar seção "Loja" no `AppShell` com: Produtos, Movimentações, Vendas, D
 ## Modelo de dados (Lovable Cloud)
 
 ```text
-products         (id, sku UNIQUE, name, category, cost, price, stock, min_stock,
-                  active, workspace_id, created_at, updated_at)
+products         (id, sku UNIQUE, name, category, complement, cost, price,
+                  avg_selling_price, stock, min_stock, active, image_url,
+                  workspace_id, created_at, updated_at)
 stock_movements  (id, product_id FK, type[in|out|adjust], quantity, reason,
                   reference_id, workspace_id, created_at, created_by)
 sales            (id, channel[mercado_livre|magalu|propria|outros], sold_at,
