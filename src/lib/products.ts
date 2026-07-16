@@ -70,11 +70,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
 }
 
 export async function updateProduct(id: number, patch: Partial<ProductInput>): Promise<void> {
-  const body: Record<string, unknown> = {};
-  for (const k of ["sku", "name", "category", "cost", "price", "min_stock", "active"] as const) {
-    if (patch[k] !== undefined) body[k] = patch[k];
-  }
-  const { error } = await supabase.from("products").update(body).eq("id", id);
+  const { error } = await supabase.from("products").update(patch as never).eq("id", id);
   if (error) throw error;
 }
 
