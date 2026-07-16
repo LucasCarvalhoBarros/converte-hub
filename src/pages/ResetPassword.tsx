@@ -65,7 +65,7 @@ export default function ResetPassword() {
             Use o código que enviamos para o seu email para concluir a redefinição.
           </p>
         </div>
-        <div className="relative text-xs text-white/50">© {new Date().getFullYear()} Converte-ai.</div>
+        <div className="relative text-xs text-white/50">© {new Date().getFullYear()} AAL Peças.</div>
       </div>
 
       <div className="flex items-center justify-center p-6 md:p-10 bg-background">

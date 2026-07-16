@@ -179,7 +179,7 @@ export default function Leads() {
 
     doc.setFontSize(16);
     doc.setTextColor(20, 20, 20);
-    doc.text("Converte-ai — Relatório de Leads", 40, 40);
+    doc.text("AAL Peças — Relatório de Leads", 40, 40);
 
     doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);

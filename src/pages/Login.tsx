@@ -29,7 +29,7 @@ export default function Login() {
     setLoading(true);
     try {
       await auth.login(email.trim(), password);
-      toast.success("Bem-vindo ao Converte-ai 🚀");
+      toast.success("Bem-vindo ao AAL Peças 🚀");
       navigate("/", { replace: true });
     } catch (err: any) {
       if (err instanceof NewPasswordRequiredError) {
@@ -120,7 +120,7 @@ export default function Login() {
           </div>
         </div>
         <div className="relative text-xs text-white/50">
-          © {new Date().getFullYear()} Converte-ai. Todos os direitos reservados.
+          © {new Date().getFullYear()} AAL Peças. Todos os direitos reservados.
         </div>
       </div>
 
@@ -182,7 +182,7 @@ export default function Login() {
                 </div>
               </div>
               <Button type="submit" disabled={loading} className="w-full bg-gradient-primary hover:opacity-95 shadow-glow h-11 text-sm font-semibold">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar no Converte-ai"}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar no AAL Peças"}
               </Button>
             </form>
           ) : (

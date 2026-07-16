@@ -4,39 +4,39 @@
 
 @layer base {
   :root {
-    /* Brand: Converte-ai — modern B2B SaaS, WhatsApp-inspired emerald + deep indigo */
-    --background: 220 30% 98%;
-    --foreground: 222 32% 12%;
+    /* Brand: AAL Peças — heavy-duty truck parts. Black, silver, signature red. */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 32% 12%;
+    --card-foreground: 0 0% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 32% 12%;
+    --popover-foreground: 0 0% 8%;
 
-    --primary: 158 76% 38%;
+    --primary: 0 78% 48%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 152 70% 55%;
+    --primary-glow: 0 85% 60%;
 
-    --secondary: 222 47% 14%;
+    --secondary: 0 0% 10%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 220 20% 95%;
-    --muted-foreground: 220 12% 45%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 40%;
 
-    --accent: 220 25% 94%;
-    --accent-foreground: 222 32% 12%;
+    --accent: 0 0% 92%;
+    --accent-foreground: 0 0% 8%;
 
-    --destructive: 0 78% 56%;
+    --destructive: 0 78% 48%;
     --destructive-foreground: 0 0% 100%;
 
     --success: 152 68% 42%;
     --warning: 38 95% 55%;
     --info: 217 90% 58%;
 
-    --border: 220 18% 90%;
-    --input: 220 18% 90%;
-    --ring: 158 76% 38%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 0 78% 48%;
 
     --radius: 0.75rem;
 
@@ -44,50 +44,50 @@
     --status-novo: 217 90% 58%;
     --status-atendimento: 38 95% 55%;
     --status-interessado: 270 70% 60%;
-    --status-quente: 14 90% 58%;
+    --status-quente: 0 85% 55%;
     --status-cliente: 152 68% 42%;
-    --status-perdido: 220 10% 55%;
+    --status-perdido: 0 0% 55%;
 
     /* Gradients & shadows */
-    --gradient-primary: linear-gradient(135deg, hsl(158 76% 38%), hsl(170 70% 45%));
-    --gradient-hero: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(222 47% 18%) 60%, hsl(158 60% 25%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 30% 98%));
+    --gradient-primary: linear-gradient(135deg, hsl(0 78% 48%), hsl(0 85% 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 6%) 0%, hsl(0 0% 14%) 60%, hsl(0 78% 30%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 98%));
 
-    --shadow-sm: 0 1px 2px 0 hsl(222 32% 12% / 0.04);
-    --shadow-md: 0 4px 16px -4px hsl(222 32% 12% / 0.08);
-    --shadow-lg: 0 18px 40px -12px hsl(222 32% 12% / 0.18);
-    --shadow-glow: 0 0 0 1px hsl(var(--primary) / 0.15), 0 12px 32px -8px hsl(var(--primary) / 0.3);
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.06);
+    --shadow-md: 0 4px 16px -4px hsl(0 0% 0% / 0.10);
+    --shadow-lg: 0 18px 40px -12px hsl(0 0% 0% / 0.22);
+    --shadow-glow: 0 0 0 1px hsl(var(--primary) / 0.20), 0 12px 32px -8px hsl(var(--primary) / 0.35);
 
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 220 20% 88%;
-    --sidebar-primary: 158 76% 38%;
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 88%;
+    --sidebar-primary: 0 78% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 35% 16%;
+    --sidebar-accent: 0 0% 12%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 222 30% 18%;
-    --sidebar-ring: 158 76% 38%;
+    --sidebar-border: 0 0% 16%;
+    --sidebar-ring: 0 78% 52%;
   }
 
   .dark {
-    --background: 222 32% 8%;
-    --foreground: 220 20% 95%;
-    --card: 222 32% 11%;
-    --card-foreground: 220 20% 95%;
-    --popover: 222 32% 11%;
-    --popover-foreground: 220 20% 95%;
-    --primary: 152 70% 50%;
-    --primary-foreground: 222 47% 10%;
-    --secondary: 222 32% 16%;
-    --secondary-foreground: 220 20% 95%;
-    --muted: 222 32% 14%;
-    --muted-foreground: 220 12% 65%;
-    --accent: 222 32% 16%;
-    --accent-foreground: 220 20% 95%;
-    --destructive: 0 70% 50%;
+    --background: 0 0% 6%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 82% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 0 0% 16%;
+    --accent-foreground: 0 0% 95%;
+    --destructive: 0 78% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 222 32% 18%;
-    --input: 222 32% 18%;
-    --ring: 152 70% 50%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 0 82% 55%;
   }
 }
 
