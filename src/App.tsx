@@ -14,6 +14,10 @@ import StatusConfig from "./pages/StatusConfig.tsx";
 import AdsConfig from "./pages/AdsConfig.tsx";
 import PlatformsConfig from "./pages/PlatformsConfig.tsx";
 import ClientesConfig from "./pages/ClientesConfig.tsx";
+import Products from "./pages/Products.tsx";
+import StockMovements from "./pages/StockMovements.tsx";
+import Sales from "./pages/Sales.tsx";
+import SalesDashboard from "./pages/SalesDashboard.tsx";
 
 const queryClient = new QueryClient();
 
