@@ -175,7 +175,14 @@ export default function ProductsPage() {
                   )}
                   onClick={() => openEdit(p)}
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto_auto] items-center gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_auto_auto_auto] items-center gap-3">
+                    <div className="h-12 w-12 rounded-md bg-muted overflow-hidden flex items-center justify-center shrink-0">
+                      {p.image_url ? (
+                        <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <Package className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
                     <div className="min-w-0">
                       <div className="font-semibold truncate">{p.name}</div>
                       <div className="text-xs text-muted-foreground truncate">
