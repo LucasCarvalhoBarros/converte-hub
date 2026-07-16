@@ -296,17 +296,17 @@ export default function ProductsPage() {
                 <Input type="number" value={form.min_stock ?? 0} onChange={(e) => setForm({ ...form, min_stock: Number(e.target.value) })} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 items-end">
               {!editing && (
                 <div className="space-y-1">
                   <Label>Estoque inicial</Label>
                   <Input type="number" value={form.stock ?? 0} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
                 </div>
               )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={form.active ?? true} onCheckedChange={(v) => setForm({ ...form, active: v })} />
-              <Label>Ativo</Label>
+              <div className="flex items-center gap-2 pb-2">
+                <Switch checked={form.active ?? true} onCheckedChange={(v) => setForm({ ...form, active: v })} />
+                <Label>Ativo</Label>
+              </div>
             </div>
           </div>
           <DialogFooter>
