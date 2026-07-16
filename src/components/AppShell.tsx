@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, MessageSquare, Settings, LogOut, Search, Bell, BarChart3, Tag, Megaphone, Layers, Building2, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, MessageSquare, Settings, LogOut, Search, Bell, BarChart3, Tag, Megaphone, Layers, Building2, Menu, X, Package, Sliders, ShoppingCart, TrendingUp } from "lucide-react";
 import { Logo } from "./Logo";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { auth, Session } from "@/lib/auth";
