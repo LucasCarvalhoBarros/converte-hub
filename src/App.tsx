@@ -14,6 +14,10 @@ import StatusConfig from "./pages/StatusConfig.tsx";
 import AdsConfig from "./pages/AdsConfig.tsx";
 import PlatformsConfig from "./pages/PlatformsConfig.tsx";
 import ClientesConfig from "./pages/ClientesConfig.tsx";
+import Products from "./pages/Products.tsx";
+import StockMovements from "./pages/StockMovements.tsx";
+import Sales from "./pages/Sales.tsx";
+import SalesDashboard from "./pages/SalesDashboard.tsx";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +39,10 @@ const App = () => (
           <Route path="/config/anuncios" element={<AdsConfig />} />
           <Route path="/config/plataformas" element={<PlatformsConfig />} />
           <Route path="/config/clientes" element={<ClientesConfig />} />
+          <Route path="/produtos" element={<Products />} />
+          <Route path="/estoque/movimentacoes" element={<StockMovements />} />
+          <Route path="/vendas" element={<Sales />} />
+          <Route path="/dashboard-vendas" element={<SalesDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

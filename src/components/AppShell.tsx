@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, MessageSquare, Settings, LogOut, Search, Bell, BarChart3, Tag, Megaphone, Layers, Building2, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, MessageSquare, Settings, LogOut, Search, Bell, BarChart3, Tag, Megaphone, Layers, Building2, Menu, X, Package, Sliders, ShoppingCart, TrendingUp } from "lucide-react";
 import { Logo } from "./Logo";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { auth, Session } from "@/lib/auth";
@@ -12,11 +12,14 @@ import { cn } from "@/lib/utils";
 const nav = [
   { to: "/relatorios", label: "Dashboards", icon: BarChart3 },
   { to: "/leads", label: "Leads", icon: Users },
-  { to: "/config/status", label: "Status do funil", icon: Tag },
+  { to: "/produtos", label: "Produtos", icon: Package, section: "Loja" },
+  { to: "/estoque/movimentacoes", label: "Estoque", icon: Sliders },
+  { to: "/vendas", label: "Vendas", icon: ShoppingCart },
+  { to: "/dashboard-vendas", label: "Dashboard vendas", icon: TrendingUp },
+  { to: "/config/status", label: "Status do funil", icon: Tag, section: "Configurações" },
   { to: "/config/anuncios", label: "Anúncios", icon: Megaphone },
   { to: "/config/plataformas", label: "Plataformas", icon: Layers },
   { to: "/config/clientes", label: "Clientes", icon: Building2 },
-  { to: "/config", label: "Configurações", icon: Settings },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
@@ -38,20 +41,26 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           const Icon = item.icon;
           const active = location.pathname === item.to || (item.to === "/leads" && location.pathname.startsWith("/leads"));
           return (
-            <button
-              key={item.to}
-              onClick={() => handleClick(item.to)}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
-                active
-                  ? "bg-sidebar-accent text-sidebar-primary-foreground shadow-soft"
-                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+            <div key={item.to}>
+              {item.section && (
+                <div className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+                  {item.section}
+                </div>
               )}
-            >
-              <Icon className={cn("h-4 w-4", active && "text-sidebar-primary")} />
-              <span>{item.label}</span>
-              {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-primary animate-pulse-glow" />}
-            </button>
+              <button
+                onClick={() => handleClick(item.to)}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                  active
+                    ? "bg-sidebar-accent text-sidebar-primary-foreground shadow-soft"
+                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                )}
+              >
+                <Icon className={cn("h-4 w-4", active && "text-sidebar-primary")} />
+                <span>{item.label}</span>
+                {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-primary animate-pulse-glow" />}
+              </button>
+            </div>
           );
         })}
       </nav>
