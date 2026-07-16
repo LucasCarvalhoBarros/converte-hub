@@ -39,6 +39,10 @@ const App = () => (
           <Route path="/config/anuncios" element={<AdsConfig />} />
           <Route path="/config/plataformas" element={<PlatformsConfig />} />
           <Route path="/config/clientes" element={<ClientesConfig />} />
+          <Route path="/produtos" element={<Products />} />
+          <Route path="/estoque/movimentacoes" element={<StockMovements />} />
+          <Route path="/vendas" element={<Sales />} />
+          <Route path="/dashboard-vendas" element={<SalesDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
