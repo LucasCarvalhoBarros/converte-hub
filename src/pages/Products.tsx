@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Package, Plus, Trash2, Loader2, AlertTriangle, RefreshCw, Search } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Package, Plus, Trash2, Loader2, AlertTriangle, RefreshCw, Search, ImagePlus, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Product, ProductInput, listProducts, createProduct, updateProduct, deleteProduct } from "@/lib/products";
+import { Product, ProductInput, listProducts, createProduct, updateProduct, deleteProduct, uploadProductImage } from "@/lib/products";
 import { onWorkspaceChange } from "@/lib/workspace";
 
-const empty: ProductInput = { sku: "", name: "", category: "", cost: 0, price: 0, stock: 0, min_stock: 0, active: true };
+const empty: ProductInput = { sku: "", name: "", category: "", cost: 0, price: 0, stock: 0, min_stock: 0, active: true, image_url: null };
 
 export default function ProductsPage() {
   const [items, setItems] = useState<Product[]>([]);
@@ -22,6 +22,8 @@ export default function ProductsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<ProductInput>(empty);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     setLoading(true);
@@ -50,8 +52,29 @@ export default function ProductsPage() {
     setForm({
       sku: p.sku, name: p.name, category: p.category ?? "",
       cost: p.cost, price: p.price, stock: p.stock, min_stock: p.min_stock, active: p.active,
+      image_url: p.image_url,
     });
     setDialogOpen(true);
+  };
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Imagem deve ter no máximo 5MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const url = await uploadProductImage(file);
+      setForm((f) => ({ ...f, image_url: url }));
+      toast.success("Imagem enviada");
+    } catch (err: any) {
+      toast.error(err.message ?? "Erro no upload");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   const submit = async () => {
@@ -152,7 +175,14 @@ export default function ProductsPage() {
                   )}
                   onClick={() => openEdit(p)}
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto_auto] items-center gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_auto_auto_auto] items-center gap-3">
+                    <div className="h-12 w-12 rounded-md bg-muted overflow-hidden flex items-center justify-center shrink-0">
+                      {p.image_url ? (
+                        <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <Package className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
                     <div className="min-w-0">
                       <div className="font-semibold truncate">{p.name}</div>
                       <div className="text-xs text-muted-foreground truncate">
@@ -196,6 +226,27 @@ export default function ProductsPage() {
             <DialogTitle>{editing ? "Editar produto" : "Novo produto"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
+            <div className="flex items-center gap-3">
+              <div className="h-20 w-20 rounded-md bg-muted overflow-hidden flex items-center justify-center shrink-0 border border-border">
+                {form.image_url ? (
+                  <img src={form.image_url} alt="preview" className="h-full w-full object-cover" />
+                ) : (
+                  <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+                <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading} className="gap-2">
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                  {form.image_url ? "Trocar imagem" : "Enviar imagem"}
+                </Button>
+                {form.image_url && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setForm({ ...form, image_url: null })} className="gap-2 text-destructive">
+                    <X className="h-4 w-4" /> Remover
+                  </Button>
+                )}
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>SKU</Label>

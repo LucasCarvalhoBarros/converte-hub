@@ -21,6 +21,7 @@ export type Database = {
           cost: number
           created_at: string
           id: number
+          image_url: string | null
           min_stock: number
           name: string
           price: number
@@ -35,6 +36,7 @@ export type Database = {
           cost?: number
           created_at?: string
           id?: number
+          image_url?: string | null
           min_stock?: number
           name: string
           price?: number
@@ -49,6 +51,7 @@ export type Database = {
           cost?: number
           created_at?: string
           id?: number
+          image_url?: string | null
           min_stock?: number
           name?: string
           price?: number

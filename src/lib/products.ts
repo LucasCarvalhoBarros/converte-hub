@@ -12,6 +12,7 @@ export interface Product {
   stock: number;
   min_stock: number;
   active: boolean;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -25,7 +26,26 @@ export type ProductInput = {
   stock?: number;
   min_stock?: number;
   active?: boolean;
+  image_url?: string | null;
 };
+
+const BUCKET = "product-images";
+
+export async function uploadProductImage(file: File): Promise<string> {
+  const ext = file.name.split(".").pop() || "jpg";
+  const path = `${ws()}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: file.type,
+  });
+  if (error) throw error;
+  const { data, error: signErr } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(path, 60 * 60 * 24 * 365);
+  if (signErr) throw signErr;
+  return data.signedUrl;
+}
 
 function ws(): number {
   return Number(getStoredWorkspaceId() || 1);
@@ -53,6 +73,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
     stock: 0, // start at 0; movement below sets it
     min_stock: input.min_stock ?? 0,
     active: input.active ?? true,
+    image_url: input.image_url ?? null,
   };
   const { data, error } = await supabase.from("products").insert(payload).select("*").single();
   if (error) throw error;
