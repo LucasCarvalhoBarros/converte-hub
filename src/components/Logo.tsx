@@ -1,12 +1,12 @@
 import { cn } from "@/lib/utils";
-import logoAsset from "@/assets/aal-pecas-logo.png.asset.json";
+import logoUrl from "@/assets/aal-pecas-logo.png";
 
 export function Logo({ className, compact = false }: { className?: string; compact?: boolean }) {
   if (compact) {
     return (
       <div className={cn("flex items-center", className)}>
         <img
-          src={logoAsset.url}
+          src={logoUrl}
           alt="AAL Peças"
           className="h-9 w-9 rounded-xl object-cover bg-black shadow-glow"
         />
@@ -17,7 +17,7 @@ export function Logo({ className, compact = false }: { className?: string; compa
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
       <img
-        src={logoAsset.url}
+        src={logoUrl}
         alt="AAL Peças logo"
         className="h-11 w-11 rounded-xl object-cover bg-black shadow-glow"
       />
