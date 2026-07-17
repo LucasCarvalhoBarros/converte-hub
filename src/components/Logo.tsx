@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import logoAsset from "@/assets/aal-pecas-logo.png.asset.json";
+import logoUrl from "@/assets/aal-pecas-logo.png";
 
 export function Logo({ className, compact = false }: { className?: string; compact?: boolean }) {
   if (compact) {
